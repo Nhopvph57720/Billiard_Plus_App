@@ -1,0 +1,2741 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CentriX Export – ChatGPT - NHN</title>
+  <link rel="icon" type="image/svg+xml" href="https://cdn.centrix.im/logo_centrix_new.svg">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #2d3748;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-container {
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .logo {
+      height: 60px;
+      width: auto;
+      transition: transform 0.3s ease;
+    }
+
+    .logo:hover {
+      transform: scale(1.05);
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      position: relative;
+      z-index: 1;
+    }
+
+    .meta {
+      background: rgba(248, 250, 252, 0.8);
+      border: 1px solid rgba(226, 232, 240, 0.5);
+      padding: 1.5rem;
+      margin: 2rem;
+      border-radius: 15px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      font-size: 0.95rem;
+      backdrop-filter: blur(5px);
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .meta-item strong {
+      color: #4f46e5;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .meta-item a {
+      color: #7c3aed;
+      text-decoration: none;
+      word-break: break-all;
+      transition: color 0.2s;
+    }
+
+    .meta-item a:hover {
+      color: #5b21b6;
+    }
+
+    #chat-container {
+      padding: 2rem;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .bubble-wrapper {
+      display: flex;
+      margin: 1.5rem 0;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .bubble-wrapper.left {
+      justify-content: flex-start;
+    }
+
+    .bubble-wrapper.right {
+      justify-content: flex-end;
+    }
+
+    .bubble {
+      padding: 1.5rem;
+      border-radius: 20px;
+      max-width: 75%;
+      word-wrap: break-word;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bubble:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .bubble.user {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      margin-left: auto;
+    }
+
+    .bubble.user::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -10px;
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-left-color: #1d4ed8;
+      transform: translateY(-50%);
+    }
+
+    .bubble.assistant {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      color: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .bubble.assistant::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -10px;
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-right-color: #f8fafc;
+      transform: translateY(-50%);
+    }
+
+    .sender {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .bubble.user .sender {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .bubble.assistant .sender {
+      color: #4f46e5;
+    }
+
+    .sender::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .timestamp {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-bottom: 0.75rem;
+      font-style: italic;
+    }
+
+    .content {
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .content h1, .content h2, .content h3 {
+      color: inherit;
+      margin: 1rem 0 0.5rem 0;
+    }
+
+    .content p {
+      margin: 0.5rem 0;
+    }
+
+    .content code {
+      background: rgba(0, 0, 0, 0.1);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'Fira Code', Consolas, Monaco, monospace;
+      font-size: 0.9rem;
+    }
+
+    .content pre {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+      border-left: 4px solid #4f46e5;
+    }
+
+    .content ul, .content ol {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+
+    .content li {
+      margin: 0.25rem 0;
+    }
+
+    .content blockquote {
+      border-left: 4px solid #4f46e5;
+      padding-left: 1rem;
+      margin: 1rem 0;
+      font-style: italic;
+      opacity: 0.8;
+    }
+
+    .footer {
+      background: rgba(71, 85, 105, 0.05);
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #64748b;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .footer-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-logo {
+      height: 24px;
+      width: auto;
+      opacity: 0.7;
+      transition: opacity 0.3s ease;
+    }
+
+    .footer-logo:hover {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .container {
+        border-radius: 15px;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .meta {
+        grid-template-columns: 1fr;
+        margin: 1rem;
+      }
+      
+      .bubble {
+        max-width: 90%;
+      }
+      
+      #chat-container {
+        padding: 1rem;
+      }
+      
+      .logo {
+        height: 40px;
+      }
+      
+      .footer-content {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .footer-logo {
+        height: 20px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      
+      .container {
+        box-shadow: none;
+        background: white;
+      }
+      
+      .header {
+        background: #4f46e5;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+      }
+      
+      .bubble {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      
+      .bubble.user {
+        background: #3b82f6;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+      }
+      
+      .bubble.assistant {
+        background: #f8fafc;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-container">
+        <img src="https://cdn.centrix.im/logo_centrix_footer.svg" alt="CentriX Logo" class="logo">
+      </div>
+      <h1>ChatGPT - NHN</h1>
+      <div class="subtitle">Conversation Transcript</div>
+    </div>
+    
+    <div class="meta">
+      <div class="meta-item">
+        <strong>📅 Date</strong>
+        <span>Monday 10 November 2025</span>
+      </div>
+      <div class="meta-item">
+        <strong>⏰ Time</strong>
+        <span>14:24:45</span>
+      </div>
+      <div class="meta-item">
+        <strong>💬 Messages</strong>
+        <span>34</span>
+      </div>
+      <div class="meta-item">
+        <strong>🔗 Source</strong>
+        <a href="https://chatgpt.com/g/g-p-6911e469dd548191b8545e54a0d3306a-nhn/c/6911e524-99bc-8321-bb1d-7f9738f63166" target="_blank">https://chatgpt.com/g/g-p-6911e469dd548191b8545e54a0d3306a-nhn/c/6911e524-99bc-8321-bb1d-7f9738f63166</a>
+      </div>
+    </div>
+    
+    <div id="chat-container">
+      
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">đọc thật kỹ 2 file tài liệu sau</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="114">Đã đọc kỹ cả 2 tài liệu bạn gửi. Dưới đây là bản tóm lược cô đọng + checklist triển khai để mình bắt tay làm ngay.</p>
+<h1 data-start="116" data-end="141">Tóm tắt yêu cầu cốt lõi</h1>
+<ul data-start="142" data-end="852">
+<li data-start="142" data-end="272">
+<p data-start="144" data-end="272">Vai trò: Lễ tân/nhân viên (vận hành bàn, hóa đơn) và Chủ quán/Quản lý (cấu hình, báo cáo). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+<li data-start="273" data-end="534">
+<p data-start="275" data-end="289">Staff App/Web:</p>
+<ul data-start="292" data-end="534">
+<li data-start="292" data-end="534">
+<p data-start="294" data-end="534">Đăng nhập; danh sách bàn (Trống/Đang chơi/Đặt trước); check-in → tính giờ realtime → check-out; thêm đồ uống/dịch vụ; tính tiền + giảm giá/khuyến mãi; in hóa đơn/QR/Zalo; xem lịch sử hóa đơn trong ngày. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.pdf">_app quản lý thuê bàn bida</span></p>
+</li>
+</ul>
+</li>
+<li data-start="535" data-end="852">
+<p data-start="537" data-end="549">Admin Panel:</p>
+<ul data-start="552" data-end="852">
+<li data-start="552" data-end="852">
+<p data-start="554" data-end="852">Quản lý bàn (tên/loại/đơn giá/trạng thái), sản phẩm (giá, phân loại), cấu hình giá &amp; khuyến mãi (khung giờ/combo/%), quản lý nhân viên &amp; lịch sử thao tác, báo cáo/Excel/PDF, thống kê (bàn chơi nhiều, món bán chạy, doanh thu theo ca), cài đặt hệ thống + backup. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+</ul>
+</li>
+</ul>
+<h1 data-start="854" data-end="877">Luồng nghiệp vụ chuẩn</h1>
+<ol data-start="878" data-end="1204">
+<li data-start="878" data-end="1204">
+<p data-start="881" data-end="1204">Nhân viên đăng nhập → 2) Chọn bàn và Check-in (ghi StartTime, loại bàn, chuyển trạng thái “Đang chơi”) → 3) Trong lúc chơi: thêm dịch vụ/đồ uống → 4) Check-out (ghi EndTime, tính tiền giờ + dịch vụ, áp khuyến mãi/giảm giá) → 5) Thanh toán (in/gửi hóa đơn) → 6) Dữ liệu đẩy vào báo cáo. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+</ol>
+<h1 data-start="1206" data-end="1237">Đề xuất mô hình dữ liệu (MVP)</h1>
+<ul data-start="1238" data-end="1876">
+<li data-start="1238" data-end="1283">
+<p data-start="1240" data-end="1283">tables(id, name, type, hourly_rate, status)</p>
+</li>
+<li data-start="1284" data-end="1378">
+<p data-start="1286" data-end="1378">sessions(id, table_id, staff_id, start_time, end_time, elapsed_minutes, hour_charge, status)</p>
+</li>
+<li data-start="1379" data-end="1427">
+<p data-start="1381" data-end="1427">products(id, name, category, price, is_active)</p>
+</li>
+<li data-start="1428" data-end="1500">
+<p data-start="1430" data-end="1500">session_items(id, session_id, product_id, qty, unit_price, line_total)</p>
+</li>
+<li data-start="1501" data-end="1568">
+<p data-start="1503" data-end="1568">promotions(id, name, type, value, rules_json, active_time_ranges)</p>
+</li>
+<li data-start="1569" data-end="1670">
+<p data-start="1571" data-end="1670">bills(id, session_id, subtotal_hours, subtotal_items, discount, total, paid_at, method, invoice_no)</p>
+</li>
+<li data-start="1671" data-end="1876">
+<p data-start="1673" data-end="1876">users(id, username, password_hash, role, is_active), activity_logs(…)<br>
+(Phù hợp với các thao tác check-in/out, thêm dịch vụ, tính tiền, khuyến mãi, hóa đơn, nhật ký.) <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+</ul>
+<h1 data-start="1878" data-end="1934">Những điểm còn mơ hồ cần chốt sớm (để tránh phát sinh)</h1>
+<ul data-start="1935" data-end="2805">
+<li data-start="1935" data-end="2062">
+<p data-start="1937" data-end="2062">Đặt trước: có cần giữ bàn trước giờ? thời lượng giữ bao lâu? (tài liệu chỉ “nếu có”). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+<li data-start="2063" data-end="2212">
+<p data-start="2065" data-end="2212">Quy tắc khuyến mãi: theo khung giờ, theo số giờ, theo tổng hóa đơn, combo đồ uống+giờ? ưu tiên/stack thế nào? <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+<li data-start="2213" data-end="2292">
+<p data-start="2215" data-end="2292">Làm tròn tiền giờ: tính theo phút hay block 5/10/15 phút? có phí tối thiểu?</p>
+</li>
+<li data-start="2293" data-end="2419">
+<p data-start="2295" data-end="2419">Nhiều chi nhánh: có kích hoạt ngay hay để phase 2? (tài liệu mở rộng trong tương lai). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+<li data-start="2420" data-end="2581">
+<p data-start="2422" data-end="2581">Hình thức thanh toán &amp; gửi bill: in hóa đơn, QR, Zalo – có cần tích hợp cổng thanh toán hay chỉ hiển thị QR chuyển khoản? <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.pdf">_app quản lý thuê bàn bida</span></p>
+</li>
+<li data-start="2582" data-end="2706">
+<p data-start="2584" data-end="2706">Phân ca/lịch sử: chốt ranh giới ca để báo cáo theo ca (mặc định 3 ca hay cấu hình?). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+<li data-start="2707" data-end="2805">
+<p data-start="2709" data-end="2805">Backup: lịch tự động (hằng ngày/giờ?), cơ chế khôi phục. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+</ul>
+<h1 data-start="2807" data-end="2851">Tình huống thực tế cần hỗ trợ (edge cases)</h1>
+<ul data-start="2852" data-end="3191">
+<li data-start="2852" data-end="2888">
+<p data-start="2854" data-end="2888">Chuyển bàn, gộp bill, tách bill.</p>
+</li>
+<li data-start="2889" data-end="2965">
+<p data-start="2891" data-end="2965">Tạm dừng giờ (pause) khi khách nghỉ/đổi cơ cấu, đổi loại bàn giữa chừng.</p>
+</li>
+<li data-start="2966" data-end="3014">
+<p data-start="2968" data-end="3014">Hủy phiên nhầm, hoàn tiền, xuất lại hóa đơn.</p>
+</li>
+<li data-start="3015" data-end="3063">
+<p data-start="3017" data-end="3063">Kiểm soát tồn kho nhẹ cho đồ uống (nếu cần).</p>
+</li>
+<li data-start="3064" data-end="3191">
+<p data-start="3066" data-end="3191">Quyền hạn chi tiết: lễ tân không sửa giá/khuyến mãi; mọi thay đổi quan trọng đều log. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+</ul>
+<h1 data-start="3193" data-end="3228">Kế hoạch triển khai nhanh (3 mốc)</h1>
+<ul data-start="3229" data-end="3630">
+<li data-start="3229" data-end="3346">
+<p data-start="3231" data-end="3346">Mốc 1 – MVP vận hành quầy: Danh sách bàn + Check-in/out + tính giờ + thêm dịch vụ + hóa đơn + lịch sử trong ngày.</p>
+</li>
+<li data-start="3347" data-end="3480">
+<p data-start="3349" data-end="3480">Mốc 2 – Quản trị: Quản lý bàn/sản phẩm/nhân viên, báo cáo cơ bản (ngày/ca), xuất CSV/PDF. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.pdf">_app quản lý thuê bàn bida</span></p>
+</li>
+<li data-start="3481" data-end="3630">
+<p data-start="3483" data-end="3630">Mốc 3 – Khuyến mãi &amp; thống kê nâng cao: khung giờ/combos, top bàn/món, dashboard doanh thu, backup tự động. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+</ul>
+<h1 data-start="3632" data-end="3650">Chuẩn UX đề xuất</h1>
+<ul data-start="3651" data-end="3919">
+<li data-start="3651" data-end="3780">
+<p data-start="3653" data-end="3780">Staff: grid bàn (màu theo trạng thái), đồng hồ đếm giờ realtime, bảng bill bên phải, phím tắt “+ đồ uống”, nút Check-out lớn.</p>
+</li>
+<li data-start="3781" data-end="3919">
+<p data-start="3783" data-end="3919">Admin: CRUD chuẩn, bộ lọc báo cáo theo ngày/ca/nhân viên/bàn, biểu đồ cột &amp; đường cho doanh thu. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="_app quản lý thuê bàn bida.docx">_app quản lý thuê bàn bida</span></p>
+</li>
+</ul>
+<p data-start="3921" data-end="4113" data-is-last-node="" data-is-only-node="">Nếu bạn đồng ý lộ trình trên, mình sẽ bắt đầu từ <strong data-start="3970" data-end="3979">Mốc 1</strong>: dựng DB schema + API check-in/out + màn “Danh sách bàn” và “Bill tính giờ + dịch vụ”, kèm logic tính tiền chuẩn và nhật ký thao tác.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">đây là cấu trúc project api giờ tôi sẽ gửi các file code sau khi tôi gửi hết code và giao công việc thì mới cần làm</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="248">Ok, đã nắm cấu trúc API rồi (controllers → services → models → validators → routes v1, middlewares đầy đủ, utils/logger/response/time, jobs/backup, public/qr, v.v.). Bạn cứ gửi lần lượt code, mình sẽ đọc kỹ rồi xử lý theo yêu cầu khi bạn giao việc.</p>
+<p data-start="250" data-end="332">Để việc review nhanh gọn, bạn gửi theo thứ tự này nhé (không cần trả lời gì thêm):</p>
+<ol data-start="333" data-end="629">
+<li data-start="333" data-end="369">
+<p data-start="336" data-end="369"><code data-start="336" data-end="349">env.example</code> và <code data-start="353" data-end="367">config/db.js</code></p>
+</li>
+<li data-start="370" data-end="406">
+<p data-start="373" data-end="406"><code data-start="373" data-end="381">app.js</code> + <code data-start="384" data-end="404">routes/v1/index.js</code></p>
+</li>
+<li data-start="407" data-end="431">
+<p data-start="410" data-end="431"><code data-start="410" data-end="429">models/*.model.js</code></p>
+</li>
+<li data-start="432" data-end="461">
+<p data-start="435" data-end="461"><code data-start="435" data-end="459">validators/*.schema.js</code></p>
+</li>
+<li data-start="462" data-end="490">
+<p data-start="465" data-end="490"><code data-start="465" data-end="488">services/*.service.js</code></p>
+</li>
+<li data-start="491" data-end="525">
+<p data-start="494" data-end="525"><code data-start="494" data-end="523">controllers/*.controller.js</code></p>
+</li>
+<li data-start="526" data-end="593">
+<p data-start="529" data-end="593"><code data-start="529" data-end="544">middlewares/*</code> (đặc biệt <code data-start="555" data-end="561">auth</code>, <code data-start="563" data-end="569">role</code>, <code data-start="571" data-end="581" data-is-only-node="">validate</code>, <code data-start="583" data-end="590">error</code>)</p>
+</li>
+<li data-start="594" data-end="629">
+<p data-start="597" data-end="629"><code data-start="597" data-end="617">jobs/backup.job.js</code> (nếu cần)</p>
+</li>
+</ol>
+<p data-start="631" data-end="758" data-is-last-node="" data-is-only-node="">Nếu có script khởi động/seed, thêm <code data-start="666" data-end="680">package.json</code> scripts liên quan để mình chạy thử logic trong đầu khi đọc code. Gửi tiếp đi!</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">config</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="116">Đã nhận và đọc kỹ 2 file trong thư mục <code data-start="39" data-end="47">config</code>. Tóm tắt + nhận xét nhanh để bạn yên tâm trước khi gửi phần kế tiếp:</p>
+<h1 data-start="118" data-end="155">1) <code data-start="123" data-end="137">config/db.js</code> — Kết nối MongoDB</h1>
+<p data-start="156" data-end="168"><strong data-start="156" data-end="168">Điểm tốt</strong></p>
+<ul data-start="169" data-end="412">
+<li data-start="169" data-end="412">
+<p data-start="171" data-end="412">Bật <code data-start="175" data-end="188">strictQuery</code>, hỗ trợ <code data-start="197" data-end="213">MONGOOSE_DEBUG</code>, pool/timeout cấu hình qua ENV, retry nhẹ có backoff, lắng nghe tín hiệu OS và đóng kết nối “êm”, helper <code data-start="319" data-end="336">withTransaction</code> có fallback khi không có replica set. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="db.js">db</span></p>
+</li>
+</ul>
+<p data-start="414" data-end="454"><strong data-start="414" data-end="454">Gợi ý cải thiện nhỏ (không bắt buộc)</strong></p>
+<ul data-start="455" data-end="1011">
+<li data-start="455" data-end="611">
+<p data-start="457" data-end="611">Cho phép set thêm <code data-start="475" data-end="491">readPreference</code>, <code data-start="493" data-end="507">writeConcern</code>, <code data-start="509" data-end="522">retryWrites</code> qua ENV để linh hoạt khi lên production/cluster. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="db.js">db</span></p>
+</li>
+<li data-start="612" data-end="827">
+<p data-start="614" data-end="827"><code data-start="614" data-end="631">withTransaction</code>: log rõ trường hợp <code data-start="651" data-end="670">DB_TRANSACTIONS=0</code> để DevOps dễ kiểm tra; cân nhắc nhận thêm <code data-start="713" data-end="742">{readConcern, writeConcern}</code> nếu sau có nghiệp vụ tài chính cần chặt chẽ. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="db.js">db</span></p>
+</li>
+<li data-start="828" data-end="1011">
+<p data-start="830" data-end="1011">Healthcheck: export một <code data-start="854" data-end="868">async ping()</code> (gọi <code data-start="874" data-end="913">mongoose.connection.db.admin().ping()</code>) để route <code data-start="924" data-end="934">/healthz</code> dùng kiểm tra tình trạng DB nhanh gọn. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="db.js">db</span></p>
+</li>
+</ul>
+<h1 data-start="1013" data-end="1061">2) <code data-start="1018" data-end="1043">config/common/upload.js</code> — Upload (multer)</h1>
+<p data-start="1062" data-end="1074"><strong data-start="1062" data-end="1074">Điểm tốt</strong></p>
+<ul data-start="1075" data-end="1308">
+<li data-start="1075" data-end="1308">
+<p data-start="1077" data-end="1308">Tự tạo thư mục upload, đặt tên file an toàn với <code data-start="1125" data-end="1137">randomUUID</code>, filter MIME ảnh (có cho phép “any” qua ENV), giới hạn size/số file, wrapper chuẩn hoá lỗi Multer, helpers trả public path/full URL. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="upload.js">upload</span></p>
+</li>
+</ul>
+<p data-start="1310" data-end="1336"><strong data-start="1310" data-end="1336">Gợi ý bảo mật/vận hành</strong></p>
+<ul data-start="1337" data-end="1811">
+<li data-start="1337" data-end="1506">
+<p data-start="1339" data-end="1506">SVG có thể chứa script; nếu giữ <code data-start="1371" data-end="1386">image/svg+xml</code>, cân nhắc sanitize (VD: dùng DOMPurify server-side hoặc tắt SVG nếu không cần). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="upload.js">upload</span></p>
+</li>
+<li data-start="1507" data-end="1702">
+<p data-start="1509" data-end="1702">Đảm bảo <code data-start="1517" data-end="1533">public/uploads</code> được serve static read-only; không cho thực thi. (Nginx/Express static nên set <code data-start="1613" data-end="1628">Cache-Control</code> + <code data-start="1631" data-end="1652">Content-Disposition</code> khi cần.) <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="upload.js">upload</span></p>
+</li>
+<li data-start="1703" data-end="1811">
+<p data-start="1705" data-end="1811">Thêm helper xóa file cũ (khi user re-upload ảnh) để tránh rác ổ đĩa. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="upload.js">upload</span></p>
+</li>
+</ul>
+<hr data-start="1813" data-end="1816">
+<p data-start="1818" data-end="2003" data-is-last-node="" data-is-only-node="">Bạn gửi tiếp giúp mình: <strong data-start="1842" data-end="1877"><code data-start="1844" data-end="1852">app.js</code> + <code data-start="1855" data-end="1875">routes/v1/index.js</code></strong> (và nếu tiện thì <code data-start="1895" data-end="1909">package.json</code> scripts) để mình rà tiếp toàn bộ luồng khởi động &amp; định tuyến trước khi sang models/services.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">models</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="126">Đã đọc kỹ toàn bộ <strong data-start="18" data-end="28">models</strong> bạn gửi. Tóm tắt &amp; nhận xét ngắn gọn theo nhóm, để sau bạn giao việc là mình code/viết test ngay:</p>
+<h2 data-start="128" data-end="148">Tổng quan mô hình</h2>
+<ul data-start="149" data-end="592">
+<li data-start="149" data-end="592">
+<p data-start="151" data-end="592">Bao phủ đầy đủ domain POS bida: <code data-start="183" data-end="191">Branch</code>, <code data-start="193" data-end="204">TableType</code> (khung giờ/đơn giá), <code data-start="226" data-end="233">Table</code> (trạng thái), <code data-start="248" data-end="257">Session</code> (snapshot loại bàn + rule làm tròn + giỏ dịch vụ), <code data-start="309" data-end="315">Bill</code> (đóng băng play/service/discount), <code data-start="351" data-end="360">Product</code>/<code data-start="361" data-end="378">ProductCategory</code>, <code data-start="380" data-end="391">Promotion</code> (time/product/bill), <code data-start="413" data-end="422">Setting</code> (shop/billing/print/e-receipt/backup), <code data-start="462" data-end="472">AuditLog</code> (actor/action/target + client). Thiết kế hướng “snapshot” rất chuẩn để không bị lệch khi admin đổi cấu hình giữa chừng.</p>
+</li>
+</ul>
+<h2 data-start="594" data-end="614">Điểm mạnh nổi bật</h2>
+<ul data-start="615" data-end="1501">
+<li data-start="615" data-end="1063">
+<p data-start="617" data-end="642"><strong data-start="617" data-end="640">Ràng buộc &amp; chỉ mục</strong>:</p>
+<ul data-start="645" data-end="1063">
+<li data-start="645" data-end="719">
+<p data-start="647" data-end="719"><code data-start="647" data-end="656">Session</code> đảm bảo “mỗi bàn chỉ có 1 phiên mở” bằng unique partial index.</p>
+</li>
+<li data-start="722" data-end="826">
+<p data-start="724" data-end="826"><code data-start="724" data-end="730">Bill</code> có helpers <code data-start="742" data-end="771">computeGroups/computeTotals</code> + hook pre-validate sinh code dạng <code data-start="807" data-end="825">BYYYYMMDD-XXXXXX</code>.</p>
+</li>
+<li data-start="829" data-end="944">
+<p data-start="831" data-end="944"><code data-start="831" data-end="842">Promotion</code> chuẩn hoá <code data-start="853" data-end="859">code</code>, unique theo <code data-start="873" data-end="891">(branchId, code)</code>, có <code data-start="896" data-end="910">isActiveAt()</code> tách bạch hiệu lực theo ngày/giờ.</p>
+</li>
+<li data-start="947" data-end="1063">
+<p data-start="949" data-end="1063"><code data-start="949" data-end="958">Setting</code> unique theo <code data-start="971" data-end="990">(scope, branchId)</code>, có chuẩn hoá <code data-start="1005" data-end="1019">roundingStep</code>, helper <code data-start="1028" data-end="1043">getRounding()</code>/<code data-start="1044" data-end="1062">getReceiptInfo()</code>.</p>
+</li>
+</ul>
+</li>
+<li data-start="1064" data-end="1323">
+<p data-start="1066" data-end="1090"><strong data-start="1066" data-end="1089">Snapshot thông minh</strong>:</p>
+<ul data-start="1093" data-end="1323">
+<li data-start="1093" data-end="1230">
+<p data-start="1095" data-end="1230"><code data-start="1095" data-end="1122">Session.tableTypeSnapshot</code> (rate/nguồn rate) + <code data-start="1143" data-end="1164">billingRuleSnapshot</code> (rounding/grace) → bảo toàn logic billing tại thời điểm check-in.</p>
+</li>
+<li data-start="1233" data-end="1323">
+<p data-start="1235" data-end="1323">Item của session/bill lưu <code data-start="1261" data-end="1289">nameSnapshot/priceSnapshot</code> → in hoá đơn không cần join nặng.</p>
+</li>
+</ul>
+</li>
+<li data-start="1324" data-end="1501">
+<p data-start="1326" data-end="1347"><strong data-start="1326" data-end="1346">Khả năng mở rộng</strong>:</p>
+<ul data-start="1350" data-end="1501">
+<li data-start="1350" data-end="1427">
+<p data-start="1352" data-end="1427">Multi-branch đã “đi dây” ở hầu hết model (có <code data-start="1397" data-end="1407">branchId</code> + index lọc nhanh).</p>
+</li>
+<li data-start="1430" data-end="1501">
+<p data-start="1432" data-end="1501"><code data-start="1432" data-end="1448">AuditLog.log()</code> tiện gọi từ controller/service, tự lấy IP/UA/source.</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 data-start="1503" data-end="1572">Gợi ý cải thiện nhỏ (không bắt buộc, để cân nhắc sau khi chạy e2e)</h2>
+<ol data-start="1573" data-end="2912">
+<li data-start="1573" data-end="1800">
+<p data-start="1576" data-end="1615"><strong data-start="1576" data-end="1613">Nhất quán “unique theo chi nhánh”</strong></p>
+<ul data-start="1619" data-end="1800">
+<li data-start="1619" data-end="1800">
+<p data-start="1621" data-end="1800"><code data-start="1621" data-end="1637">TableType.code</code> đang unique “toàn cục”. Nếu triển khai multi-branch thực sự, cân nhắc đổi thành unique <code data-start="1725" data-end="1743">(branchId, code)</code> (giống <code data-start="1751" data-end="1762">Promotion</code>, <code data-start="1764" data-end="1781">ProductCategory</code>, <code data-start="1783" data-end="1796">Product.sku</code>).</p>
+</li>
+</ul>
+</li>
+<li data-start="1801" data-end="1967">
+<p data-start="1804" data-end="1841"><strong data-start="1804" data-end="1839">Xoá liên quan &amp; an toàn dữ liệu</strong></p>
+<ul data-start="1845" data-end="1967">
+<li data-start="1845" data-end="1967">
+<p data-start="1847" data-end="1967">Khi xoá <code data-start="1855" data-end="1866">TableType</code>/<code data-start="1867" data-end="1884">ProductCategory</code>: chặn xoá nếu còn <code data-start="1903" data-end="1910">Table</code>/<code data-start="1911" data-end="1920">Product</code> tham chiếu, hoặc chuyển sang <code data-start="1950" data-end="1964">active=false</code>.</p>
+</li>
+</ul>
+</li>
+<li data-start="1968" data-end="2237">
+<p data-start="1971" data-end="1995"><strong data-start="1971" data-end="1993">Tiền tệ &amp; làm tròn</strong></p>
+<ul data-start="1999" data-end="2237">
+<li data-start="1999" data-end="2237">
+<p data-start="2001" data-end="2237"><code data-start="2001" data-end="2030">Session.computePlayAmount()</code> hiện <code data-start="2036" data-end="2048">Math.round</code>. Khi in/đóng băng bill nên quy ước <strong data-start="2084" data-end="2102">1 đơn vị = VND</strong> (số nguyên), mọi phép chia (rate/60) nên làm tròn nhất quán (ví dụ: luôn <code data-start="2176" data-end="2188">Math.round</code> sau khi cộng dồn, hoặc chuẩn “round half up”).</p>
+</li>
+</ul>
+</li>
+<li data-start="2238" data-end="2477">
+<p data-start="2241" data-end="2276"><strong data-start="2241" data-end="2274">Khuyến mãi nâng cao (phase 2)</strong></p>
+<ul data-start="2280" data-end="2477">
+<li data-start="2280" data-end="2477">
+<p data-start="2282" data-end="2477"><code data-start="2282" data-end="2312">Promotion.discount.maxAmount</code> đã có; sau này có thể thêm “ưu tiên áp theo <code data-start="2357" data-end="2369">applyOrder</code> + <code data-start="2372" data-end="2383">stackable</code>” trong service để chính xác khi nhiều KM cùng lúc (áp cho <code data-start="2442" data-end="2461">play/service/bill</code> theo thứ tự).</p>
+</li>
+</ul>
+</li>
+<li data-start="2478" data-end="2662">
+<p data-start="2481" data-end="2511"><strong data-start="2481" data-end="2509">Tối ưu truy vấn phổ biến</strong></p>
+<ul data-start="2515" data-end="2662">
+<li data-start="2515" data-end="2662">
+<p data-start="2517" data-end="2662">Thêm index gợi ý: <code data-start="2535" data-end="2544">Session</code> theo <code data-start="2550" data-end="2571">branchId, startTime</code> (báo cáo theo ca/ ngày); <code data-start="2597" data-end="2616">Bill.paid, paidAt</code> (lọc hóa đơn đã thanh toán theo thời gian).</p>
+</li>
+</ul>
+</li>
+<li data-start="2663" data-end="2785">
+<p data-start="2666" data-end="2689"><strong data-start="2666" data-end="2687">An ninh/kiểm toán</strong></p>
+<ul data-start="2693" data-end="2785">
+<li data-start="2693" data-end="2785">
+<p data-start="2695" data-end="2785"><code data-start="2695" data-end="2705">AuditLog</code>: set thêm TTL index (tuỳ yêu cầu) hoặc cơ chế archive logs định kỳ để DB gọn.</p>
+</li>
+</ul>
+</li>
+<li data-start="2786" data-end="2912">
+<p data-start="2789" data-end="2809"><strong data-start="2789" data-end="2807">Tên bàn unique</strong></p>
+<ul data-start="2813" data-end="2912">
+<li data-start="2813" data-end="2912">
+<p data-start="2815" data-end="2912"><code data-start="2815" data-end="2822">Table</code> đã unique <code data-start="2833" data-end="2851">(branchId, name)</code> rất ổn; giữ invariant này ở controller (trả lỗi mềm dễ đọc).</p>
+</li>
+</ul>
+</li>
+</ol>
+<p data-start="2914" data-end="3059" data-is-last-node="" data-is-only-node="">Nếu ổn, bạn gửi tiếp <strong data-start="2935" data-end="2949">validators</strong> và <strong data-start="2953" data-end="2965">services</strong> để mình rà ràng buộc đầu–cuối (validate → service → model) trước khi sang controllers/routes.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="97">Đã đọc kỹ <code data-start="10" data-end="32">models/user.model.js</code>. Tóm tắt nhanh + nhận xét ngắn gọn để bạn gửi tiếp phần còn lại:</p>
+<h2 data-start="99" data-end="109">Điểm ổn</h2>
+<ul data-start="110" data-end="645">
+<li data-start="110" data-end="283">
+<p data-start="112" data-end="283">Schema gọn: <code data-start="124" data-end="134">username</code>/<code data-start="135" data-end="142">email</code> duy nhất (email <code data-start="159" data-end="167">sparse</code>), <code data-start="170" data-end="180">password</code> <code data-start="181" data-end="195">select:false</code>, <code data-start="197" data-end="203">role</code> enum <code data-start="209" data-end="228">['staff','admin']</code>, <code data-start="230" data-end="238">active</code>, <code data-start="240" data-end="253">lastLoginAt</code>, <code data-start="255" data-end="265">branchId</code> cho đa chi nhánh.</p>
+</li>
+<li data-start="284" data-end="420">
+<p data-start="286" data-end="299">Băm mật khẩu:</p>
+<ul data-start="302" data-end="420">
+<li data-start="302" data-end="343">
+<p data-start="304" data-end="343"><code data-start="304" data-end="317">pre('save')</code> băm khi tạo/đổi mật khẩu.</p>
+</li>
+<li data-start="346" data-end="420">
+<p data-start="348" data-end="420"><code data-start="348" data-end="373">pre('findOneAndUpdate')</code> xử lý cả <code data-start="383" data-end="393">password</code> trực tiếp và trong <code data-start="413" data-end="419">$set</code>.</p>
+</li>
+</ul>
+</li>
+<li data-start="421" data-end="547">
+<p data-start="423" data-end="430">Helper:</p>
+<ul data-start="433" data-end="547">
+<li data-start="433" data-end="505">
+<p data-start="435" data-end="505"><code data-start="435" data-end="454">comparePassword()</code> (nhớ <code data-start="460" data-end="482">.select('+password')</code> khi truy vấn để dùng).</p>
+</li>
+<li data-start="508" data-end="547">
+<p data-start="510" data-end="547"><code data-start="510" data-end="521">hasRole()</code> tiện kiểm tra phân quyền.</p>
+</li>
+</ul>
+</li>
+<li data-start="548" data-end="645">
+<p data-start="550" data-end="645"><code data-start="550" data-end="558">toJSON</code> transform ẩn <code data-start="572" data-end="577">_id</code>, <code data-start="579" data-end="589">password</code>, <code data-start="591" data-end="596">__v</code>, thêm <code data-start="603" data-end="607">id</code>; có index phụ trợ (<code data-start="627" data-end="633" data-is-only-node="">role</code>, <code data-start="635" data-end="643">active</code>).</p>
+</li>
+</ul>
+<h2 data-start="647" data-end="706">Gợi ý nhỏ (để cân nhắc khi nối với controllers/services)</h2>
+<ol data-start="707" data-end="2023">
+<li data-start="707" data-end="870">
+<p data-start="710" data-end="870"><strong data-start="710" data-end="737">runValidators &amp; context</strong><br data-start="737" data-end="740">
+Khi dùng <code data-start="752" data-end="770">findOneAndUpdate</code>, nhớ bật <code data-start="780" data-end="816">{ runValidators: true, new: true }</code> ở controller để ràng buộc <code data-start="843" data-end="854">minlength</code>… có hiệu lực.</p>
+</li>
+<li data-start="871" data-end="994">
+<p data-start="874" data-end="994"><strong data-start="874" data-end="897">Salt rounds qua ENV</strong><br data-start="897" data-end="900">
+Cho phép cấu hình <code data-start="921" data-end="941">BCRYPT_SALT_ROUNDS</code> (mặc định 10) để dễ tinh chỉnh hiệu năng prod/dev.</p>
+</li>
+<li data-start="995" data-end="1286">
+<p data-start="998" data-end="1286"><strong data-start="998" data-end="1033">Unique theo lowercase tuyệt đối</strong><br data-start="1033" data-end="1036">
+Bạn đã <code data-start="1046" data-end="1062">lowercase:true</code> cho <code data-start="1067" data-end="1083">username/email</code>. Ở Mongo, để tránh va chạm do collation, nên giữ index hiện tại nhưng đồng thời đảm bảo mọi ghi nhận đi vào đều đã <code data-start="1199" data-end="1215">.toLowerCase()</code> (đang ok nhờ option), và không sửa collation mặc định khác nơi khác.</p>
+</li>
+<li data-start="1287" data-end="1403">
+<p data-start="1290" data-end="1403"><strong data-start="1290" data-end="1324">Giới hạn đăng nhập (phase sau)</strong><br data-start="1324" data-end="1327">
+Có thể thêm <code data-start="1342" data-end="1357">loginAttempts</code>, <code data-start="1359" data-end="1370">lockUntil</code> để khoá tạm khi đoán mật khẩu.</p>
+</li>
+<li data-start="1404" data-end="1569">
+<p data-start="1407" data-end="1569"><strong data-start="1407" data-end="1434">Quy tắc đổi role/active</strong><br data-start="1434" data-end="1437">
+Ở controller/service, chặn user tự đổi <code data-start="1479" data-end="1485">role</code>/<code data-start="1486" data-end="1494">active</code>; chỉ <code data-start="1500" data-end="1507">admin</code> (và không được tự hạ vai trò chính mình nếu là admin cuối).</p>
+</li>
+<li data-start="1570" data-end="1759">
+<p data-start="1573" data-end="1759"><strong data-start="1573" data-end="1594">Phone/email regex</strong><br data-start="1594" data-end="1597">
+Regex email đơn giản là đủ; nếu cần chặt hơn hãy validate ở tầng service. Với <code data-start="1678" data-end="1685">phone</code>, tuỳ Việt Nam: có thể thêm pattern <code data-start="1721" data-end="1742">^(\+?84|0)\d{9,10}$</code> (tùy yêu cầu).</p>
+</li>
+<li data-start="1760" data-end="1867">
+<p data-start="1763" data-end="1867"><strong data-start="1763" data-end="1782">Chỉ mục bổ sung</strong><br data-start="1782" data-end="1785">
+Nếu lọc theo chi nhánh thường xuyên: thêm index <code data-start="1836" data-end="1864">{ branchId: 1, active: 1 }</code>.</p>
+</li>
+<li data-start="1868" data-end="2023">
+<p data-start="1871" data-end="2023"><strong data-start="1871" data-end="1895">Dọn dữ liệu nhạy cảm</strong><br data-start="1895" data-end="1898">
+Ngoài <code data-start="1907" data-end="1915">toJSON</code>, khi trả danh sách người dùng trong admin API, chắc chắn không đính kèm trường nhạy cảm nào khác (đang ok).</p>
+</li>
+</ol>
+<p data-start="2025" data-end="2193" data-is-last-node="" data-is-only-node="">Mình đã sẵn sàng xem tiếp <strong data-start="2051" data-end="2065">validators</strong> và <strong data-start="2069" data-end="2081">services</strong> (nhất là auth/billing/session) để khớp đủ luồng đăng nhập → phân quyền → thao tác ca/bàn/hóa đơn. Gửi tiếp nhé.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">jobs</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="112">Đã đọc kỹ <code data-start="10" data-end="30">jobs/backup.job.js</code>. Tóm tắt nhanh + khuyến nghị để bạn chốt cấu hình và (nếu cần) mình bổ sung ngay.</p>
+<h1 data-start="114" data-end="133">Tóm tắt chức năng</h1>
+<ul data-start="134" data-end="680">
+<li data-start="134" data-end="345">
+<p data-start="136" data-end="345">Tạo thư mục <code data-start="148" data-end="165">storage/backups</code> và chạy <code data-start="174" data-end="202">mongodump --archive --gzip</code> đặt tên file dạng <code data-start="221" data-end="256">backup_YYYYMMDD_HHMMSS.archive.gz</code>. Có xoá file cũ theo số ngày lưu/giới hạn số file. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+<li data-start="346" data-end="535">
+<p data-start="348" data-end="535">Đọc cấu hình từ <code data-start="364" data-end="380">Setting.backup</code> (enable, timeOfDay, target), có thể ép lịch qua <code data-start="429" data-end="442">BACKUP_CRON</code>. Ưu tiên <code data-start="452" data-end="463">node-cron</code>, fallback <code data-start="474" data-end="487">setInterval</code> mỗi phút. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+<li data-start="536" data-end="680">
+<p data-start="538" data-end="680">Hỗ trợ target <code data-start="552" data-end="559">local</code> (mặc định); <code data-start="572" data-end="583">s3/gdrive</code> để TODO. Có CLI: <code data-start="601" data-end="641">node jobs/backup.job.js run | schedule</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<h1 data-start="682" data-end="692">Điểm tốt</h1>
+<ul data-start="693" data-end="1124">
+<li data-start="693" data-end="891">
+<p data-start="695" data-end="891">Cấu trúc rõ ràng: tách <code data-start="718" data-end="733">runBackupOnce</code>, <code data-start="735" data-end="751">scheduleBackup</code>, <code data-start="753" data-end="770">pruneOldBackups</code>, <code data-start="772" data-end="786">runMongoDump</code>. Log có scope <code data-start="801" data-end="809">backup</code>, có retention theo ngày &amp; cap theo số file. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+<li data-start="892" data-end="1025">
+<p data-start="894" data-end="1025">Lịch linh hoạt: ENV hoặc đọc từ Setting “HH:mm” (build cron). Có timezone <code data-start="968" data-end="986">Asia/Ho_Chi_Minh</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+<li data-start="1026" data-end="1124">
+<p data-start="1028" data-end="1124">CLI tiện để test thủ công hoặc ghim vào crontab ngoài app. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<h1 data-start="1126" data-end="1173">Gợi ý cải thiện (nhanh – an toàn – thực dụng)</h1>
+<ol data-start="1174" data-end="1203">
+<li data-start="1174" data-end="1203">
+<p data-start="1177" data-end="1203">Chống log lộ mật khẩu DB</p>
+</li>
+</ol>
+<ul data-start="1204" data-end="1377">
+<li data-start="1204" data-end="1377">
+<p data-start="1206" data-end="1377">Khi log <code data-start="1214" data-end="1220">args</code> mongodump, nếu URI có user:pass hãy mask trước khi ghi log. (Ví dụ replace chuỗi sau <code data-start="1306" data-end="1318">mongodb://</code> đến <code data-start="1323" data-end="1326">@</code> bằng <code data-start="1332" data-end="1337">***</code>.) <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="2" data-start="1379" data-end="1418">
+<li data-start="1379" data-end="1418">
+<p data-start="1382" data-end="1418">Kiểm tra có <code data-start="1394" data-end="1405">mongodump</code> trong PATH</p>
+</li>
+</ol>
+<ul data-start="1419" data-end="1587">
+<li data-start="1419" data-end="1587">
+<p data-start="1421" data-end="1587">Trước khi spawn, thử <code data-start="1442" data-end="1477">spawn('mongodump', ['--version'])</code> một lần hoặc bắt lỗi <code data-start="1499" data-end="1507">ENOENT</code> để báo “Chưa cài MongoDB Database Tools”. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="3" data-start="1589" data-end="1628">
+<li data-start="1589" data-end="1628">
+<p data-start="1592" data-end="1628">Khoá đồng thời (concurrency guard)</p>
+</li>
+</ol>
+<ul data-start="1629" data-end="1819">
+<li data-start="1629" data-end="1819">
+<p data-start="1631" data-end="1819">Tránh 2 tiến trình backup chạy chồng (nhất là khi có nhiều instance): dùng lock file (vd <code data-start="1720" data-end="1733">backup.lock</code> với mtime &lt; 2h thì bỏ qua) hoặc cờ trong Redis. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="4" data-start="1821" data-end="1847">
+<li data-start="1821" data-end="1847">
+<p data-start="1824" data-end="1847">Retention rõ ràng hơn</p>
+</li>
+</ol>
+<ul data-start="1848" data-end="2045">
+<li data-start="1848" data-end="2045">
+<p data-start="1850" data-end="2045">Hiện đang dựa vào mtime; ổn. Có thể thêm lựa chọn “giữ tối thiểu N file dù quá ngày” (ưu tiên <code data-start="1944" data-end="1954">maxFiles</code>) – logic bạn đã có, chỉ cần mô tả trong README/.env. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="5" data-start="2047" data-end="2070">
+<li data-start="2047" data-end="2070">
+<p data-start="2050" data-end="2070">Tuỳ biến mongodump</p>
+</li>
+</ol>
+<ul data-start="2071" data-end="2312">
+<li data-start="2071" data-end="2312">
+<p data-start="2073" data-end="2312">Cho phép ENV tuỳ chọn như: <code data-start="2100" data-end="2128">BACKUP_EXCLUDE_COLLECTIONS</code>, <code data-start="2130" data-end="2173">BACKUP_READ_PREFERENCE=secondaryPreferred</code>, <code data-start="2175" data-end="2197">BACKUP_COMPRESS=zstd</code> (nếu dùng bản mới), hoặc <code data-start="2223" data-end="2249">--numParallelCollections</code>. Thêm vào args nếu có. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="6" data-start="2314" data-end="2349">
+<li data-start="2314" data-end="2349">
+<p data-start="2317" data-end="2349">S3/GDrive target (nếu cần sớm)</p>
+</li>
+</ol>
+<ul data-start="2350" data-end="2704">
+<li data-start="2350" data-end="2480">
+<p data-start="2352" data-end="2480">S3: <code data-start="2356" data-end="2376">@aws-sdk/client-s3</code> putObject (ContentType <code data-start="2400" data-end="2418">application/gzip</code>, ServerSideEncryption), key theo <code data-start="2452" data-end="2477">YYYY/MM/DD/backup_...gz</code>.</p>
+</li>
+<li data-start="2481" data-end="2704">
+<p data-start="2483" data-end="2704">GDrive: <code data-start="2491" data-end="2503">googleapis</code> drive v3 <code data-start="2513" data-end="2527">files.create</code> (resumable). Lưu <code data-start="2545" data-end="2553">fileId</code> để xóa theo retention. (Đang <code data-start="2583" data-end="2589">TODO</code> là đúng; mình có thể bổ sung module <code data-start="2626" data-end="2641">targets/s3.js</code>, <code data-start="2643" data-end="2662">targets/gdrive.js</code>.) <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="7" data-start="2706" data-end="2747">
+<li data-start="2706" data-end="2747">
+<p data-start="2709" data-end="2747">API cho admin chạy tay &amp; xem lịch sử</p>
+</li>
+</ol>
+<ul data-start="2748" data-end="2946">
+<li data-start="2748" data-end="2813">
+<p data-start="2750" data-end="2813">Thêm route <code data-start="2761" data-end="2786">POST /admin/backups/run</code> → gọi <code data-start="2793" data-end="2810">runBackupOnce()</code>.</p>
+</li>
+<li data-start="2814" data-end="2946">
+<p data-start="2816" data-end="2946">Thêm <code data-start="2821" data-end="2841">GET /admin/backups</code> → liệt kê file trong <code data-start="2863" data-end="2875">BACKUP_DIR</code> (tên, size, mtime) để tải/xoá. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="8" data-start="2948" data-end="2975">
+<li data-start="2948" data-end="2975">
+<p data-start="2951" data-end="2975">Docker/PM2 khuyến nghị</p>
+</li>
+</ol>
+<ul data-start="2976" data-end="3153">
+<li data-start="2976" data-end="3153">
+<p data-start="2978" data-end="3153">Nếu chạy nhiều replica → chỉ 1 instance đảm nhiệm backup (dựa ENV <code data-start="3044" data-end="3064">BACKUP_LEADER=true</code>) hoặc dùng external cron (host/Cloud Scheduler). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<ol start="9" data-start="3155" data-end="3188">
+<li data-start="3155" data-end="3188">
+<p data-start="3158" data-end="3188">README/.env mẫu (đề xuất thêm)</p>
+</li>
+</ol>
+<pre class="overflow-visible!" data-start="3189" data-end="3488"><code>ini# Backup
+BACKUP_CRON=0 2 * * *         # ưu tiên cái này, hoặc cấu hình Setting.backup.timeOfDay
+BACKUP_MAX_FILES=14
+TZ=Asia/Ho_Chi_Minh
+MONGODB_URI=mongodb://user:pass@host:27017/db?authSource=admin
+# BACKUP_EXCLUDE_COLLECTIONS=sessions,auditlogs
+# BACKUP_READ_PREFERENCE=secondaryPreferred
+</code></pre>
+<p data-start="3489" data-end="3528"><span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+<ol start="10" data-start="3530" data-end="3551">
+<li data-start="3530" data-end="3551">
+<p data-start="3534" data-end="3551">Nhỏ nhưng hữu ích</p>
+</li>
+</ol>
+<ul data-start="3552" data-end="3817">
+<li data-start="3552" data-end="3641">
+<p data-start="3554" data-end="3641">Trả về mã lỗi/STDERR khi <code data-start="3579" data-end="3594">runBackupOnce</code> fail để controller có thể phản hồi chi tiết.</p>
+</li>
+<li data-start="3642" data-end="3817">
+<p data-start="3644" data-end="3817"><code data-start="3644" data-end="3661">pruneOldBackups</code> bắt thêm lỗi <code data-start="3675" data-end="3684">readdir</code>/<code data-start="3685" data-end="3691">stat</code> để không fail toàn job nếu file bị xoá thủ công. (Bạn đã try/catch khi unlink – tốt.) <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="backup.job.js">backup.job</span></p>
+</li>
+</ul>
+<p data-start="3819" data-end="3841">Nếu bạn muốn, mình sẽ:</p>
+<ul data-start="3842" data-end="3989">
+<li data-start="3842" data-end="3893">
+<p data-start="3844" data-end="3893">Viết nhanh module <code data-start="3862" data-end="3877">targets/s3.js</code> + option ENV.</p>
+</li>
+<li data-start="3894" data-end="3942">
+<p data-start="3896" data-end="3942">Thêm endpoint admin để chạy tay &amp; list file.</p>
+</li>
+<li data-start="3943" data-end="3989">
+<p data-start="3945" data-end="3989">Bổ sung mask URI + check tool + lock file.</p>
+</li>
+</ul>
+<p data-start="3991" data-end="4095" data-is-last-node="" data-is-only-node="">Gửi tiếp phần <strong data-start="4005" data-end="4019">validators</strong> hoặc <strong data-start="4025" data-end="4037">services</strong> nhé (nhất là <code data-start="4051" data-end="4071">billing.service.js</code>, <code data-start="4073" data-end="4093">session.service.js</code>).</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">utils
+
+tôi chiện chỉ cần bạn đọc kĩ nhungwx file code tôi gửi chưa cần bạn làm những vieecj khác</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="116">Đã đọc kỹ 4 file trong thư mục <strong data-start="31" data-end="40">utils</strong> bạn vừa gửi. Mình chỉ xác nhận nội dung, chưa đề xuất hay thay đổi gì thêm:</p>
+<ul data-start="118" data-end="855">
+<li data-start="118" data-end="285">
+<p data-start="120" data-end="285"><code data-start="120" data-end="138">utils/codegen.js</code>: bộ tạo mã/chuỗi ngẫu nhiên, slug, SKU, mã Bill/Session theo ngày (BILL-YYYYMMDD-####, SES-YYYYMMDD-XXXX). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="codegen.js">codegen</span></p>
+</li>
+<li data-start="286" data-end="450">
+<p data-start="288" data-end="450"><code data-start="288" data-end="307">utils/response.js</code>: helper chuẩn hóa response (<code data-start="336" data-end="369">ok/created/noContent/fail/paged</code>) và <code data-start="374" data-end="388" data-is-only-node="">asyncHandler</code> cho controller async. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="response.js">response</span></p>
+</li>
+<li data-start="451" data-end="656">
+<p data-start="453" data-end="656"><code data-start="453" data-end="470">utils/logger.js</code>: logger pino (fallback console), mức log theo env, middleware <code data-start="533" data-end="544">requestId</code>, <code data-start="546" data-end="558" data-is-only-node="">httpLogger</code> log sau khi response, có <code data-start="584" data-end="595">getLogger</code> để tạo child logger. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="logger.js">logger</span></p>
+</li>
+<li data-start="657" data-end="855">
+<p data-start="659" data-end="855"><code data-start="659" data-end="674">utils/time.js</code>: tiện ích thời gian/phút—định dạng HH:mm, tính/round phút, grace minutes, kiểm tra khoảng giờ (kể cả qua đêm), range mặc định trong ngày, v.v. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="time.js">time</span></p>
+</li>
+</ul>
+<p data-start="857" data-end="945" data-is-last-node="" data-is-only-node="">Bạn cứ tiếp tục gửi các phần tiếp theo, mình sẽ đọc kỹ tương tự trước khi bạn giao việc.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">services</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="106">Đã đọc kỹ toàn bộ <strong data-start="18" data-end="30">services</strong> bạn gửi. Mình chỉ xác nhận và tóm lược ngắn gọn (chưa đề xuất thay đổi gì):</p>
+<ul data-start="108" data-end="1899">
+<li data-start="108" data-end="366">
+<p data-start="110" data-end="366"><strong data-start="110" data-end="127">qr.service.js</strong>: tạo QR (PNG/DataURL/SVG), lưu vào <code data-start="163" data-end="174">public/qr</code>, helper build URL <code data-start="193" data-end="211" data-is-only-node="">/bills/:id/print</code> từ <code data-start="215" data-end="241">Setting.eReceipt.baseUrl</code> hoặc từ host hiện tại; có hàm trả PNG trực tiếp qua Express và tiện ích dành cho bill. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="qr.service.js">qr.service</span></p>
+</li>
+<li data-start="368" data-end="739">
+<p data-start="370" data-end="394"><strong data-start="370" data-end="391">export.service.js</strong>:</p>
+<ul data-start="397" data-end="739">
+<li data-start="397" data-end="582">
+<p data-start="399" data-end="582">Excel: xuất danh sách hóa đơn (lọc theo thời gian/chi nhánh/trạng thái thanh toán) và gói báo cáo nhiều sheet (Summary, Daily, TopTables, TopProductsQty/Amount, ByStaff, ByPayment).</p>
+</li>
+<li data-start="585" data-end="739">
+<p data-start="587" data-end="739">PDF: kết xuất hoá đơn (58mm/80mm/A4), lấy Setting hiện hành, dựng header/body/totals, có in URL e-receipt khi bật. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="export.service.js">export.service</span></p>
+</li>
+</ul>
+</li>
+<li data-start="741" data-end="1073">
+<p data-start="743" data-end="1073"><strong data-start="743" data-end="764">report.service.js</strong>: các truy vấn tổng hợp MongoDB Aggregation cho dashboard/báo cáo: <code data-start="831" data-end="846">summaryReport</code>, chuỗi thời gian theo ngày, top bàn (tiền/phút), top sản phẩm (số lượng/doanh thu), theo nhân viên, theo phương thức thanh toán; có chuẩn hoá khoảng thời gian và bộ lọc chi nhánh/paidOnly. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="report.service.js">report.service</span></p>
+</li>
+<li data-start="1075" data-end="1432">
+<p data-start="1077" data-end="1432"><strong data-start="1077" data-end="1101">promotion.service.js</strong>: engine áp khuyến mãi: tải danh sách khuyến mãi đang hiệu lực theo chi nhánh/thời điểm, kiểm tra điều kiện theo ngày/khung giờ/dow, hỗ trợ scope <code data-start="1247" data-end="1270">time | product | bill</code>, tính toán số tiền giảm theo <code data-start="1300" data-end="1303" data-is-only-node="">%</code> hoặc giá trị, xử lý stackable/non-stackable; tiện ích dựng context từ Session khi preview. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="promotion.service.js">promotion.service</span></p>
+</li>
+<li data-start="1434" data-end="1899">
+<p data-start="1436" data-end="1503"><strong data-start="1436" data-end="1458">billing.service.js</strong>: nghiệp vụ tính giờ &amp; vòng đời phiên chơi:</p>
+<ul data-start="1506" data-end="1899">
+<li data-start="1506" data-end="1621">
+<p data-start="1508" data-end="1621">Setting active (branch→global), resolve đơn giá/h theo khung giờ/ngày/override của bàn, snapshot rule tính giờ.</p>
+</li>
+<li data-start="1624" data-end="1685">
+<p data-start="1626" data-end="1685">Tính phút (raw/bill) với rounding &amp; grace, tính tiền giờ.</p>
+</li>
+<li data-start="1688" data-end="1899">
+<p data-start="1690" data-end="1899">Lifecycle: <code data-start="1701" data-end="1714">openSession</code>, thao tác item (add/update/remove), <code data-start="1751" data-end="1765">previewClose</code>, <code data-start="1767" data-end="1784">checkoutSession</code> (tạo Bill, chốt Session, đổi trạng thái bàn), tất cả chạy trong transaction. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="billing.service.js">billing.service</span></p>
+</li>
+</ul>
+</li>
+</ul>
+<p data-start="1901" data-end="2025" data-is-last-node="" data-is-only-node="">Bạn tiếp tục gửi <strong data-start="1918" data-end="1933">controllers</strong>, <strong data-start="1935" data-end="1949">validators</strong>, <strong data-start="1951" data-end="1966">middlewares</strong>, <strong data-start="1968" data-end="1978">routes</strong>… mình sẽ đọc kỹ tương tự và chờ bạn giao việc.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">middlewares</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="62">Đã đọc kỹ toàn bộ <strong data-start="18" data-end="33">middlewares</strong> bạn gửi và nắm rõ cách dùng:</p>
+<ul data-start="64" data-end="935">
+<li data-start="64" data-end="262">
+<p data-start="66" data-end="262"><code data-start="66" data-end="86">auth.middleware.js</code>: lấy token từ <code data-start="101" data-end="116">Authorization</code>/cookie, <code data-start="125" data-end="139" data-is-only-node="">optionalAuth</code>, <code data-start="141" data-end="154">requireAuth</code>, <code data-start="156" data-end="171">verifyRefresh</code>, kèm helpers ký phát/issue access &amp; refresh token. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="auth.middleware.js">auth.middleware</span></p>
+</li>
+<li data-start="263" data-end="416">
+<p data-start="265" data-end="416"><code data-start="265" data-end="285">role.middleware.js</code>: kiểm tra quyền theo vai trò, <code data-start="316" data-end="375">requireRole/requireAnyRole/requireSelfOrRole/requireAdmin</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="role.middleware.js">role.middleware</span></p>
+</li>
+<li data-start="417" data-end="641">
+<p data-start="419" data-end="641"><code data-start="419" data-end="443">validate.middleware.js</code>: validate đa phần (<code data-start="463" data-end="490">params/query/body/headers</code>) với Joi/Zod, trả lỗi 400 dạng <code data-start="522" data-end="552" data-is-only-node="">{errors:[{in,path,message}]}</code>; có <code data-start="557" data-end="572">JoiObjectId()</code> và <code data-start="576" data-end="600">requireObjectIdParam()</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="validate.middleware.js">validate.middleware</span></p>
+</li>
+<li data-start="642" data-end="764">
+<p data-start="644" data-end="764"><code data-start="644" data-end="668">notfound.middleware.js</code>: 404 cho API (JSON) và Web (render), có <code data-start="709" data-end="723">autoNotFound</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="notfound.middleware.js">notfound.middleware</span></p>
+</li>
+<li data-start="765" data-end="935">
+<p data-start="767" data-end="935"><code data-start="767" data-end="788">error.middleware.js</code>: chuẩn hoá lỗi (Joi/Zod/Mongoose/Multer/JWT/duplicate key/CastError), API trả JSON, Web render view <code data-start="889" data-end="896">error</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="error.middleware.js">error.middleware</span></p>
+</li>
+</ul>
+<p data-start="937" data-end="1011" data-is-last-node="" data-is-only-node="">Bạn cứ tiếp tục gửi phần kế tiếp; mình sẽ chỉ đọc kỹ và chờ bạn giao việc.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">validators</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="90">Đã đọc kỹ toàn bộ <strong data-start="18" data-end="32">validators</strong> bạn gửi và nắm cấu trúc – chỉ xác nhận, chưa làm gì thêm:</p>
+<ul data-start="92" data-end="1558">
+<li data-start="92" data-end="248">
+<p data-start="94" data-end="248"><code data-start="94" data-end="113">setting.schema.js</code> (GET current, PUT upsert, PATCH phần shop/billing/print/eReceipt/backup, scope global/branch). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="setting.schema.js">setting.schema</span></p>
+</li>
+<li data-start="249" data-end="429">
+<p data-start="251" data-end="429"><code data-start="251" data-end="272">promotion.schema.js</code> (list/create/update/active/apply-order/getOne/remove; scope <code data-start="333" data-end="352">time|product|bill</code>, rule theo HH:mm, DOW, combo, v.v.). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="promotion.schema.js">promotion.schema</span></p>
+</li>
+<li data-start="430" data-end="579">
+<p data-start="432" data-end="579"><code data-start="432" data-end="448">bill.schema.js</code> (list/getOne/pay/setNote/exportExcel/print/qr/remove; payment <code data-start="511" data-end="537">cash|card|transfer|other</code>). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="bill.schema.js">bill.schema</span></p>
+</li>
+<li data-start="580" data-end="715">
+<p data-start="582" data-end="715"><code data-start="582" data-end="602">category.schema.js</code> (list/create/update/setActive/getOne/remove; code A–Z/0–9/_/-, màu HEX). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="category.schema.js">category.schema</span></p>
+</li>
+<li data-start="716" data-end="861">
+<p data-start="718" data-end="861"><code data-start="718" data-end="737">product.schema.js</code> (list/create/update/setActive/setPrice/setImages/addTags/removeTags/getOne/remove). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="product.schema.js">product.schema</span></p>
+</li>
+<li data-start="862" data-end="1003">
+<p data-start="864" data-end="1003"><code data-start="864" data-end="883">session.schema.js</code> (list/open/addItem/updateItemQty/removeItem/previewClose/checkout/void/getOne). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="session.schema.js">session.schema</span></p>
+</li>
+<li data-start="1004" data-end="1155">
+<p data-start="1006" data-end="1155"><code data-start="1006" data-end="1028">table-type.schema.js</code> (list/create/update/setActive/setDayRates/getOne/remove; dayRates theo HH:mm và days). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table-type.schema.js">table-type.schema</span></p>
+</li>
+<li data-start="1156" data-end="1332">
+<p data-start="1158" data-end="1332"><code data-start="1158" data-end="1175">table.schema.js</code> (list/create/update/changeStatus/setActive/setRate/reorder/remove; status <code data-start="1250" data-end="1290">available|playing|reserved|maintenance</code>). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.schema.js">table.schema</span></p>
+</li>
+<li data-start="1333" data-end="1455">
+<p data-start="1335" data-end="1455"><code data-start="1335" data-end="1351">user.schema.js</code> (list/create/update/changeRole/setActive/resetPassword/getOne). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="user.schema.js">user.schema</span></p>
+</li>
+<li data-start="1456" data-end="1558">
+<p data-start="1458" data-end="1558"><code data-start="1458" data-end="1474">auth.schema.js</code> (login/refresh/updateProfile/changePassword). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="auth.schema.js">auth.schema</span></p>
+</li>
+</ul>
+<p data-start="1560" data-end="1645" data-is-last-node="" data-is-only-node="">Bạn gửi tiếp phần kế tiếp đi (controllers/routes…), mình sẽ tiếp tục đọc kỹ tương tự.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">controllers</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="100">Đã đọc kỹ toàn bộ <strong data-start="18" data-end="33">controllers</strong> bạn gửi. Mình chỉ xác nhận đã nắm rõ, chưa thực hiện việc gì khác:</p>
+<ul data-start="102" data-end="1697">
+<li data-start="102" data-end="302">
+<p data-start="104" data-end="302"><code data-start="104" data-end="127">session.controller.js</code>: quản lý vòng đời phiên chơi (list/get, open, thêm/sửa/xóa item, previewClose, checkout, void). Có fallback khi thiếu <code data-start="246" data-end="263">billing.service</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="session.controller.js">session.controller</span></p>
+</li>
+<li data-start="303" data-end="432">
+<p data-start="305" data-end="432"><code data-start="305" data-end="325">user.controller.js</code>: CRUD người dùng, đổi role/active, reset mật khẩu, phân trang + lọc. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="user.controller.js">user.controller</span></p>
+</li>
+<li data-start="433" data-end="575">
+<p data-start="435" data-end="575"><code data-start="435" data-end="455">auth.controller.js</code>: login/refresh/me/updateProfile/changePassword/logout, hỗ trợ cookie JWT tùy ENV. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="auth.controller.js">auth.controller</span></p>
+</li>
+<li data-start="576" data-end="745">
+<p data-start="578" data-end="745"><code data-start="578" data-end="601">setting.controller.js</code>: lấy/áp dụng cấu hình theo scope (global/branch), upsert + patch từng nhóm, có endpoint hiệu lực thực tế. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="setting.controller.js">setting.controller</span></p>
+</li>
+<li data-start="746" data-end="907">
+<p data-start="748" data-end="907"><code data-start="748" data-end="770">report.controller.js</code>: summary/daily/revenue/topProducts/topTables/byStaff/dashboard, có fallback agg nếu thiếu service. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="report.controller.js">report.controller</span></p>
+</li>
+<li data-start="908" data-end="1059">
+<p data-start="910" data-end="1059"><code data-start="910" data-end="935">promotion.controller.js</code>: CRUD khuyến mãi, filter hiệu lực theo thời điểm (scope=time), set active/applyOrder. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="promotion.controller.js">promotion.controller</span></p>
+</li>
+<li data-start="1060" data-end="1236">
+<p data-start="1062" data-end="1236"><code data-start="1062" data-end="1082">bill.controller.js</code>: list/get/pay/note/exportExcel/print/qr/remove, tích hợp export &amp; QR nếu service sẵn, có build query lọc phong phú. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="bill.controller.js">bill.controller</span></p>
+</li>
+<li data-start="1237" data-end="1374">
+<p data-start="1239" data-end="1374"><code data-start="1239" data-end="1263">category.controller.js</code>: CRUD danh mục, phân trang + sort, ngăn xóa khi còn sản phẩm tham chiếu. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="category.controller.js">category.controller</span></p>
+</li>
+<li data-start="1375" data-end="1535">
+<p data-start="1377" data-end="1535"><code data-start="1377" data-end="1400">product.controller.js</code>: CRUD sản phẩm, setActive/price/images/tags, chặn xóa nếu đang dùng trong session mở/đã có bill. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="product.controller.js">product.controller</span></p>
+</li>
+<li data-start="1536" data-end="1697">
+<p data-start="1538" data-end="1697"><code data-start="1538" data-end="1564">table-type.controller.js</code>: CRUD loại bàn, validate chồng lấn dayRates, setActive/setDayRates, ngăn xóa khi còn bàn dùng. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table-type.controller.js">table-type.controller</span></p>
+</li>
+</ul>
+<p data-start="1699" data-end="1799" data-is-last-node="" data-is-only-node="">Bạn gửi tiếp phần <strong data-start="1717" data-end="1727">routes</strong> (và <code data-start="1732" data-end="1740">app.js</code> nếu chưa gửi) khi sẵn sàng; mình tiếp tục đọc kỹ tương tự.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="91">Đã đọc kỹ <code data-start="10" data-end="43">controllers/table.controller.js</code>. Mình chỉ xác nhận nội dung (chưa làm gì khác):</p>
+<ul data-start="93" data-end="1256">
+<li data-start="93" data-end="258">
+<p data-start="95" data-end="258">Helpers: <code data-start="104" data-end="115">parseSort</code>, <code data-start="117" data-end="129">buildQuery</code>, <code data-start="131" data-end="141">sanitize</code>, <code data-start="143" data-end="166">attachOpenSessionInfo</code> (gắn <code data-start="172" data-end="188">currentSession</code> vào mỗi bàn nếu có phiên mở). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="259" data-end="1256">
+<p data-start="261" data-end="271">Endpoints:</p>
+<ul data-start="274" data-end="1256">
+<li data-start="274" data-end="435">
+<p data-start="276" data-end="435"><code data-start="276" data-end="289">GET /tables</code> phân trang + lọc (<code data-start="308" data-end="339">q,status,type,active,branchId</code>) + sort, <code data-start="349" data-end="367" data-is-only-node="">populate('type')</code>, đính kèm thông tin phiên mở. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="438" data-end="534">
+<p data-start="440" data-end="534"><code data-start="440" data-end="457">GET /tables/:id</code> trả chi tiết + phiên đang mở (nếu có). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="537" data-end="637">
+<p data-start="539" data-end="637"><code data-start="539" data-end="553">POST /tables</code> tạo bàn (auto <code data-start="568" data-end="580">orderIndex</code> nếu không truyền). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="640" data-end="725">
+<p data-start="642" data-end="725"><code data-start="642" data-end="659">PUT /tables/:id</code> cập nhật các trường cơ bản. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="728" data-end="853">
+<p data-start="730" data-end="853"><code data-start="730" data-end="756">PATCH /tables/:id/status</code> đổi trạng thái (<code data-start="773" data-end="813">available|playing|reserved|maintenance</code>). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="856" data-end="941">
+<p data-start="858" data-end="941"><code data-start="858" data-end="884">PATCH /tables/:id/active</code> bật/tắt hoạt động. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="944" data-end="1044">
+<p data-start="946" data-end="1044"><code data-start="946" data-end="970">PATCH /tables/:id/rate</code> set <code data-start="975" data-end="988">ratePerHour</code> (số hoặc <code data-start="998" data-end="1004" data-is-only-node="">null</code>). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="1047" data-end="1143">
+<p data-start="1049" data-end="1143"><code data-start="1049" data-end="1072">PATCH /tables/reorder</code> bulkWrite cập nhật <code data-start="1092" data-end="1104">orderIndex</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+<li data-start="1146" data-end="1256">
+<p data-start="1148" data-end="1256"><code data-start="1148" data-end="1168">DELETE /tables/:id</code> chặn xoá nếu còn session mở hoặc có bill lịch sử. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table.controller.js">table.controller</span></p>
+</li>
+</ul>
+</li>
+</ul>
+<p data-start="1258" data-end="1335" data-is-last-node="" data-is-only-node="">Bạn gửi tiếp phần routes/app… khi sẵn sàng; mình sẽ tiếp tục đọc kỹ tương tự.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">routes</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="32">Đã đọc kỹ toàn bộ <strong data-start="18" data-end="31">routes/v1</strong>.</p>
+<ul data-start="34" data-end="1252">
+<li data-start="34" data-end="245">
+<p data-start="36" data-end="245"><code data-start="36" data-end="46">index.js</code>: có <code data-start="51" data-end="60">/health</code>, <code data-start="62" data-end="72" data-is-only-node="">/version</code>, và auto-mount đủ module (<code data-start="99" data-end="203">auth, users, tables, table-types, sessions, products, categories, bills, promotions, reports, settings</code>). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="index.js">index</span></p>
+</li>
+<li data-start="246" data-end="375">
+<p data-start="248" data-end="375"><code data-start="248" data-end="264">auth.routes.js</code>: login/refresh/logout + profile (me, update profile, change password). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="auth.routes.js">auth.routes</span></p>
+</li>
+<li data-start="376" data-end="553">
+<p data-start="378" data-end="553"><code data-start="378" data-end="398">sessions.routes.js</code>: list/get, open (check-in), CRUD item, previewClose, checkout, void; bảo vệ bằng <code data-start="480" data-end="493">requireAuth</code> + role staff|admin. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="sessions.routes.js">sessions.routes</span></p>
+</li>
+<li data-start="554" data-end="686">
+<p data-start="556" data-end="686"><code data-start="556" data-end="573">bills.routes.js</code>: list/get/pay/note/print/qr (staff|admin), export.xlsx &amp; delete (admin). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="bills.routes.js">bills.routes</span></p>
+</li>
+<li data-start="687" data-end="988">
+<p data-start="689" data-end="988"><code data-start="689" data-end="709">products.routes.js</code>, <code data-start="711" data-end="733">categories.routes.js</code>, <code data-start="735" data-end="758" data-is-only-node="">table-types.routes.js</code>, <code data-start="760" data-end="782">promotions.routes.js</code>: CRUD và các tác vụ phụ, hầu hết yêu cầu <strong data-start="824" data-end="833">admin</strong>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="products.routes.js">products.routes</span> <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="categories.routes.js">categories.routes</span> <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="table-types.routes.js">table-types.routes</span> <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="promotions.routes.js">promotions.routes</span></p>
+</li>
+<li data-start="989" data-end="1126">
+<p data-start="991" data-end="1126"><code data-start="991" data-end="1010">reports.routes.js</code>: summary/daily/revenue/topProducts/topTables/staff/dashboard (staff|admin). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="reports.routes.js">reports.routes</span></p>
+</li>
+<li data-start="1127" data-end="1252">
+<p data-start="1129" data-end="1252"><code data-start="1129" data-end="1149">settings.routes.js</code>: xem effective/current (staff|admin), upsert/patch nhóm (admin). <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="settings.routes.js">settings.routes</span></p>
+</li>
+</ul>
+<p data-start="1254" data-end="1422" data-is-last-node="" data-is-only-node="">Mình đã nắm đủ định tuyến. Bạn gửi tiếp <strong data-start="1294" data-end="1304">app.js</strong> (và nếu tiện thì <code data-start="1322" data-end="1339">users.routes.js</code>, <code data-start="1341" data-end="1359">tables.routes.js</code>, <code data-start="1361" data-end="1375">package.json</code>) — mình sẽ đọc kỹ nốt trước khi bạn giao việc.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="33">Đã đọc kỹ 2 file <strong data-start="17" data-end="27">routes</strong> cuối:</p>
+<ul data-start="35" data-end="486">
+<li data-start="35" data-end="283">
+<p data-start="37" data-end="283"><code data-start="37" data-end="65">routes/v1/tables.routes.js</code>: bảo vệ tất cả endpoint bằng <code data-start="95" data-end="108">requireAuth</code>; staff|admin được xem danh sách/chi tiết; CRUD/trạng thái/active/rate/reorder/xoá chỉ <strong data-start="195" data-end="204" data-is-only-node="">admin</strong>. Áp dụng validate theo schema tương ứng. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="tables.routes.js">tables.routes</span></p>
+</li>
+<li data-start="284" data-end="486">
+<p data-start="286" data-end="486"><code data-start="286" data-end="313">routes/v1/users.routes.js</code>: toàn bộ dưới <code data-start="328" data-end="341">requireAuth</code> + <code data-start="344" data-end="358" data-is-only-node="">requireAdmin</code>; có list/get/create/update/changeRole/setActive/resetPassword/delete với validate đầy đủ. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="users.routes.js">users.routes</span></p>
+</li>
+</ul>
+<p data-start="488" data-end="587" data-is-last-node="" data-is-only-node="">Ok, mình đã nắm toàn bộ code bạn gửi. Bạn cứ giao việc khi sẵn sàng, mình sẽ làm theo đúng yêu cầu.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="100">Đã đọc kỹ <strong data-start="10" data-end="26">package.json</strong> và <strong data-start="30" data-end="40">app.js</strong> bạn vừa gửi. Xác nhận nội dung (chỉ đọc, chưa làm gì khác):</p>
+<ul data-start="102" data-end="1039">
+<li data-start="102" data-end="389">
+<p data-start="104" data-end="122"><strong data-start="104" data-end="120">package.json</strong></p>
+<ul data-start="125" data-end="389">
+<li data-start="125" data-end="194">
+<p data-start="127" data-end="194">Scripts: <code data-start="136" data-end="143">start</code> → <code data-start="146" data-end="162">node ./bin/www</code>, <code data-start="164" data-end="169">dev</code> → <code data-start="172" data-end="191">nodemon ./bin/www</code>.</p>
+</li>
+<li data-start="197" data-end="389">
+<p data-start="199" data-end="389">Dependencies chính: <code data-start="219" data-end="228">express</code>, <code data-start="230" data-end="243">mongoose@^8</code>, <code data-start="245" data-end="259">jsonwebtoken</code>, <code data-start="261" data-end="271">bcryptjs</code>, <code data-start="273" data-end="281">multer</code>, <code data-start="283" data-end="292">exceljs</code>, <code data-start="294" data-end="302">pdfkit</code>, <code data-start="304" data-end="312">qrcode</code>, <code data-start="314" data-end="322">helmet</code>, <code data-start="324" data-end="337">compression</code>, <code data-start="339" data-end="345">cors</code>, v.v. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="package.json">package</span></p>
+</li>
+</ul>
+</li>
+<li data-start="391" data-end="1039">
+<p data-start="393" data-end="405"><strong data-start="393" data-end="403">app.js</strong></p>
+<ul data-start="408" data-end="1039">
+<li data-start="408" data-end="474">
+<p data-start="410" data-end="474">Nạp <code data-start="414" data-end="420">.env</code>, kết nối Mongo (<code data-start="437" data-end="451">db.connect()</code>), bật <code data-start="458" data-end="471">trust proxy</code>.</p>
+</li>
+<li data-start="477" data-end="547">
+<p data-start="479" data-end="547">View engine <strong data-start="491" data-end="498">hbs</strong> + helpers (<code data-start="510" data-end="514">eq</code>, <code data-start="516" data-end="522">json</code>, <code data-start="524" data-end="531">money</code>, <code data-start="533" data-end="543">datetime</code>).</p>
+</li>
+<li data-start="550" data-end="644">
+<p data-start="552" data-end="644">Optional middlewares tự bật nếu cài: <code data-start="589" data-end="597">helmet</code>, <code data-start="599" data-end="612">compression</code>, <code data-start="614" data-end="620">cors</code> (đọc <code data-start="626" data-end="640">CORS_ORIGINS</code>).</p>
+</li>
+<li data-start="647" data-end="769">
+<p data-start="649" data-end="769">Core middlewares: <code data-start="667" data-end="678">requestId</code>, <code data-start="680" data-end="692">httpLogger</code>, <code data-start="694" data-end="719">express.json/urlencoded</code>, <code data-start="721" data-end="735">cookieParser</code>, static <code data-start="744" data-end="754">/uploads</code> &amp; <code data-start="757" data-end="766">/public</code>.</p>
+</li>
+<li data-start="772" data-end="853">
+<p data-start="774" data-end="853">Mount web router nếu có <code data-start="798" data-end="812">routes/index</code>; mount API <strong data-start="824" data-end="835">/api/v1</strong> từ <code data-start="839" data-end="850">routes/v1</code>.</p>
+</li>
+<li data-start="856" data-end="931">
+<p data-start="858" data-end="931">Chuỗi xử lý 404 + error cho API và web riêng; có fallback JSON cho API.</p>
+</li>
+<li data-start="934" data-end="1039">
+<p data-start="936" data-end="1039">Tùy chọn bật lịch backup khi <code data-start="965" data-end="1000">ENABLE_BACKUP_SCHEDULE === 'true'</code>. <span class="text-token-text-secondary inline-flex items-center rounded-full bg-[#f4f4f4] select-none dark:bg-token-main-surface-secondary  h-[22px] px-2 text-[0.5em] font-medium ms-1" title="app.js">app</span></p>
+</li>
+</ul>
+</li>
+</ul>
+<p data-start="1041" data-end="1130" data-is-last-node="" data-is-only-node="">Bạn cứ tiếp tục gửi phần nào còn lại (nếu có). Mình sẽ tiếp tục đọc kỹ theo đúng yêu cầu.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">đầu tiên hãy làm bảng này cho tôi</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="132">Xong rồi. Mình đã điền đầy đủ bảng “Method / URL / Des / input / output” cho toàn bộ API theo dự án của bạn và gộp thành file Excel.</p>
+<p data-start="134" data-end="201"><span class="" data-state="closed"><a data-start="134" data-end="201" class="cursor-pointer">Download the Excel</a></span></p>
+<p data-start="203" data-end="373" data-is-last-node="" data-is-only-node="">Nếu bạn muốn mình xuất thêm bản CSV từng module, hay đổi mô tả/thu gọn tham số cho khớp 100% với UI hiện tại, nói mình chỉnh ngay. <span class="align-middle" data-state="closed"></span></p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">hãy miêu tả từng URL dùng để làm gì, cách nó hoat động, sẽ có những dữ liệu nào đc hiển thị lên. miêu tả thật chi tiết và rõ ràng, trình bày đừng bị rối mắt</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="138">Tuyệt! Mình tóm gọn theo <strong data-start="25" data-end="35">module</strong>. Mỗi URL đều ghi rõ: <strong data-start="57" data-end="105">Mục đích → Cách hoạt động → Dữ liệu hiển thị</strong>. Bố cục thống nhất, dễ quét mắt.</p>
+<hr data-start="140" data-end="143">
+<h1 data-start="145" data-end="171">Auth (đăng nhập &amp; hồ sơ)</h1>
+<p data-start="172" data-end="201"><strong data-start="172" data-end="199">POST /api/v1/auth/login</strong></p>
+<ul data-start="202" data-end="462">
+<li data-start="202" data-end="251">
+<p data-start="204" data-end="251">Mục đích: Đăng nhập lấy access/refresh token.</p>
+</li>
+<li data-start="252" data-end="351">
+<p data-start="254" data-end="351">Cách hoạt động: Kiểm tra username/password → ký JWT → đặt refresh token (cookie hoặc trả JSON).</p>
+</li>
+<li data-start="352" data-end="462">
+<p data-start="354" data-end="462">Hiển thị: <code data-start="364" data-end="415">user {id, username, name, role, branchId, active}</code>, <code data-start="417" data-end="430">accessToken</code>, <code data-start="432" data-end="446">refreshToken</code> (nếu trả JSON).</p>
+</li>
+</ul>
+<p data-start="464" data-end="495"><strong data-start="464" data-end="493">POST /api/v1/auth/refresh</strong></p>
+<ul data-start="496" data-end="659">
+<li data-start="496" data-end="550">
+<p data-start="498" data-end="550">Mục đích: Lấy access token mới khi access hết hạn.</p>
+</li>
+<li data-start="551" data-end="632">
+<p data-start="553" data-end="632">Cách hoạt động: Xác thực refresh token (cookie/JSON) → phát access token mới.</p>
+</li>
+<li data-start="633" data-end="659">
+<p data-start="635" data-end="659">Hiển thị: <code data-start="645" data-end="658">accessToken</code>.</p>
+</li>
+</ul>
+<p data-start="661" data-end="686"><strong data-start="661" data-end="684">GET /api/v1/auth/me</strong></p>
+<ul data-start="687" data-end="886">
+<li data-start="687" data-end="740">
+<p data-start="689" data-end="740">Mục đích: Lấy thông tin tài khoản đang đăng nhập.</p>
+</li>
+<li data-start="741" data-end="800">
+<p data-start="743" data-end="800">Cách hoạt động: Đọc <code data-start="763" data-end="786">Authorization: Bearer</code> → tìm user.</p>
+</li>
+<li data-start="801" data-end="886">
+<p data-start="803" data-end="886">Hiển thị: <code data-start="813" data-end="885">user {id, username, name, role, email?, phone?, branchId, lastLoginAt}</code>.</p>
+</li>
+</ul>
+<p data-start="888" data-end="918"><strong data-start="888" data-end="916">PUT /api/v1/auth/profile</strong></p>
+<ul data-start="919" data-end="1072">
+<li data-start="919" data-end="966">
+<p data-start="921" data-end="966">Mục đích: Cập nhật thông tin hồ sơ cá nhân.</p>
+</li>
+<li data-start="967" data-end="1030">
+<p data-start="969" data-end="1030">Cách hoạt động: Validate các trường cho phép → cập nhật DB.</p>
+</li>
+<li data-start="1031" data-end="1072">
+<p data-start="1033" data-end="1072">Hiển thị: <code data-start="1043" data-end="1049">user</code> mới (các field hồ sơ).</p>
+</li>
+</ul>
+<p data-start="1074" data-end="1112"><strong data-start="1074" data-end="1110">PUT /api/v1/auth/change-password</strong></p>
+<ul data-start="1113" data-end="1237">
+<li data-start="1113" data-end="1140">
+<p data-start="1115" data-end="1140">Mục đích: Đổi mật khẩu.</p>
+</li>
+<li data-start="1141" data-end="1209">
+<p data-start="1143" data-end="1209">Cách hoạt động: So khớp <code data-start="1167" data-end="1180">oldPassword</code> → băm &amp; lưu <code data-start="1193" data-end="1206">newPassword</code>.</p>
+</li>
+<li data-start="1210" data-end="1237">
+<p data-start="1212" data-end="1237">Hiển thị: <code data-start="1222" data-end="1236">{ ok: true }</code>.</p>
+</li>
+</ul>
+<p data-start="1239" data-end="1269"><strong data-start="1239" data-end="1267">POST /api/v1/auth/logout</strong></p>
+<ul data-start="1270" data-end="1387">
+<li data-start="1270" data-end="1312">
+<p data-start="1272" data-end="1312">Mục đích: Đăng xuất/huỷ refresh token.</p>
+</li>
+<li data-start="1313" data-end="1359">
+<p data-start="1315" data-end="1359">Cách hoạt động: Xoá/thu hồi refresh token.</p>
+</li>
+<li data-start="1360" data-end="1387">
+<p data-start="1362" data-end="1387">Hiển thị: <code data-start="1372" data-end="1386">{ ok: true }</code>.</p>
+</li>
+</ul>
+<hr data-start="1389" data-end="1392">
+<h1 data-start="1394" data-end="1431">Users (quản trị người dùng – admin)</h1>
+<p data-start="1432" data-end="1455"><strong data-start="1432" data-end="1453">GET /api/v1/users</strong></p>
+<ul data-start="1456" data-end="1728">
+<li data-start="1456" data-end="1510">
+<p data-start="1458" data-end="1510">Mục đích: Danh sách người dùng kèm phân trang/lọc.</p>
+</li>
+<li data-start="1511" data-end="1603">
+<p data-start="1513" data-end="1603">Cách hoạt động: Lọc theo <code data-start="1538" data-end="1565">q, role, active, branchId</code>; phân trang <code data-start="1578" data-end="1591">page, limit</code>; sắp xếp.</p>
+</li>
+<li data-start="1604" data-end="1728">
+<p data-start="1606" data-end="1728">Hiển thị: <code data-start="1616" data-end="1696">data[] {id, username, name, role, email, phone, branchId, active, lastLoginAt}</code>, <code data-start="1698" data-end="1727">paging {page, limit, total}</code>.</p>
+</li>
+</ul>
+<p data-start="1730" data-end="1757"><strong data-start="1730" data-end="1755">GET /api/v1/users/:id</strong></p>
+<ul data-start="1758" data-end="1877">
+<li data-start="1758" data-end="1792">
+<p data-start="1760" data-end="1792">Mục đích: Xem chi tiết 1 user.</p>
+</li>
+<li data-start="1793" data-end="1827">
+<p data-start="1795" data-end="1827">Cách hoạt động: Tìm theo <code data-start="1820" data-end="1824">id</code>.</p>
+</li>
+<li data-start="1828" data-end="1877">
+<p data-start="1830" data-end="1877">Hiển thị: Thông tin user đầy đủ (trừ password).</p>
+</li>
+</ul>
+<p data-start="1879" data-end="1903"><strong data-start="1879" data-end="1901">POST /api/v1/users</strong></p>
+<ul data-start="1904" data-end="2034">
+<li data-start="1904" data-end="1931">
+<p data-start="1906" data-end="1931">Mục đích: Tạo user mới.</p>
+</li>
+<li data-start="1932" data-end="2008">
+<p data-start="1934" data-end="2008">Cách hoạt động: Validate duy nhất <code data-start="1968" data-end="1984">username/email</code> → băm password → lưu.</p>
+</li>
+<li data-start="2009" data-end="2034">
+<p data-start="2011" data-end="2034">Hiển thị: User vừa tạo.</p>
+</li>
+</ul>
+<p data-start="2036" data-end="2063"><strong data-start="2036" data-end="2061">PUT /api/v1/users/:id</strong></p>
+<ul data-start="2064" data-end="2192">
+<li data-start="2064" data-end="2114">
+<p data-start="2066" data-end="2114">Mục đích: Cập nhật thông tin (không gồm role).</p>
+</li>
+<li data-start="2115" data-end="2165">
+<p data-start="2117" data-end="2165">Cách hoạt động: Cập nhật các trường được phép.</p>
+</li>
+<li data-start="2166" data-end="2192">
+<p data-start="2168" data-end="2192">Hiển thị: User cập nhật.</p>
+</li>
+</ul>
+<p data-start="2194" data-end="2228"><strong data-start="2194" data-end="2226">PATCH /api/v1/users/:id/role</strong></p>
+<ul data-start="2229" data-end="2389">
+<li data-start="2229" data-end="2266">
+<p data-start="2231" data-end="2266">Mục đích: Đổi role (staff/admin).</p>
+</li>
+<li data-start="2267" data-end="2354">
+<p data-start="2269" data-end="2354">Cách hoạt động: Kiểm tra quyền admin, ngăn tự hạ vai trò chính mình (nếu có logic).</p>
+</li>
+<li data-start="2355" data-end="2389">
+<p data-start="2357" data-end="2389">Hiển thị: User sau khi đổi role.</p>
+</li>
+</ul>
+<p data-start="2391" data-end="2427"><strong data-start="2391" data-end="2425">PATCH /api/v1/users/:id/active</strong></p>
+<ul data-start="2428" data-end="2533">
+<li data-start="2428" data-end="2460">
+<p data-start="2430" data-end="2460">Mục đích: Khoá/mở tài khoản.</p>
+</li>
+<li data-start="2461" data-end="2502">
+<p data-start="2463" data-end="2502">Cách hoạt động: Cập nhật cờ <code data-start="2491" data-end="2499">active</code>.</p>
+</li>
+<li data-start="2503" data-end="2533">
+<p data-start="2505" data-end="2533">Hiển thị: User sau cập nhật.</p>
+</li>
+</ul>
+<p data-start="2535" data-end="2578"><strong data-start="2535" data-end="2576">POST /api/v1/users/:id/reset-password</strong></p>
+<ul data-start="2579" data-end="2681">
+<li data-start="2579" data-end="2610">
+<p data-start="2581" data-end="2610">Mục đích: Đặt lại mật khẩu.</p>
+</li>
+<li data-start="2611" data-end="2653">
+<p data-start="2613" data-end="2653">Cách hoạt động: Băm mật khẩu mới, lưu.</p>
+</li>
+<li data-start="2654" data-end="2681">
+<p data-start="2656" data-end="2681">Hiển thị: <code data-start="2666" data-end="2680">{ ok: true }</code>.</p>
+</li>
+</ul>
+<p data-start="2683" data-end="2713"><strong data-start="2683" data-end="2711">DELETE /api/v1/users/:id</strong></p>
+<ul data-start="2714" data-end="2844">
+<li data-start="2714" data-end="2737">
+<p data-start="2716" data-end="2737">Mục đích: Xoá user.</p>
+</li>
+<li data-start="2738" data-end="2816">
+<p data-start="2740" data-end="2816">Cách hoạt động: Kiểm tra ràng buộc (nếu có) rồi xoá mềm/cứng tuỳ thiết kế.</p>
+</li>
+<li data-start="2817" data-end="2844">
+<p data-start="2819" data-end="2844">Hiển thị: <code data-start="2829" data-end="2843">{ ok: true }</code>.</p>
+</li>
+</ul>
+<hr data-start="2846" data-end="2849">
+<h1 data-start="2851" data-end="2865">Tables (bàn)</h1>
+<p data-start="2866" data-end="2890"><strong data-start="2866" data-end="2888">GET /api/v1/tables</strong></p>
+<ul data-start="2891" data-end="3239">
+<li data-start="2891" data-end="2972">
+<p data-start="2893" data-end="2972">Mục đích: Danh sách bàn để hiển thị lưới (Trống/Đang chơi/Đặt trước/Bảo trì).</p>
+</li>
+<li data-start="2973" data-end="3085">
+<p data-start="2975" data-end="3085">Cách hoạt động: Lọc <code data-start="2995" data-end="3026">status,type,active,branchId,q</code>; sắp xếp; <em data-start="3037" data-end="3047">đính kèm</em> <code data-start="3048" data-end="3064">currentSession</code> nếu bàn đang chơi.</p>
+</li>
+<li data-start="3086" data-end="3239">
+<p data-start="3088" data-end="3239">Hiển thị: <code data-start="3098" data-end="3228">data[] {id, name, type{ id,name,code }, status, ratePerHour, orderIndex, active, currentSession?{ id,startTime,elapsedMinutes }}</code>, <code data-start="3230" data-end="3238">paging</code>.</p>
+</li>
+</ul>
+<p data-start="3241" data-end="3269"><strong data-start="3241" data-end="3267">GET /api/v1/tables/:id</strong></p>
+<ul data-start="3270" data-end="3428">
+<li data-start="3270" data-end="3315">
+<p data-start="3272" data-end="3315">Mục đích: Chi tiết 1 bàn + phiên đang mở.</p>
+</li>
+<li data-start="3316" data-end="3371">
+<p data-start="3318" data-end="3371">Cách hoạt động: Tìm bàn, tra phiên “open” (nếu có).</p>
+</li>
+<li data-start="3372" data-end="3428">
+<p data-start="3374" data-end="3428">Hiển thị: Thông tin bàn &amp; <code data-start="3400" data-end="3416">currentSession</code> y như trên.</p>
+</li>
+</ul>
+<p data-start="3430" data-end="3455"><strong data-start="3430" data-end="3453">POST /api/v1/tables</strong></p>
+<ul data-start="3456" data-end="3603">
+<li data-start="3456" data-end="3482">
+<p data-start="3458" data-end="3482">Mục đích: Tạo bàn mới.</p>
+</li>
+<li data-start="3483" data-end="3578">
+<p data-start="3485" data-end="3578">Cách hoạt động: Validate unique <code data-start="3517" data-end="3534">(branchId,name)</code>; gán <code data-start="3540" data-end="3552">orderIndex</code> mặc định nếu không gửi.</p>
+</li>
+<li data-start="3579" data-end="3603">
+<p data-start="3581" data-end="3603">Hiển thị: Bàn vừa tạo.</p>
+</li>
+</ul>
+<p data-start="3605" data-end="3633"><strong data-start="3605" data-end="3631">PUT /api/v1/tables/:id</strong></p>
+<ul data-start="3634" data-end="3744">
+<li data-start="3634" data-end="3666">
+<p data-start="3636" data-end="3666">Mục đích: Sửa thông tin bàn.</p>
+</li>
+<li data-start="3667" data-end="3714">
+<p data-start="3669" data-end="3714">Cách hoạt động: Cập nhật các trường cơ bản.</p>
+</li>
+<li data-start="3715" data-end="3744">
+<p data-start="3717" data-end="3744">Hiển thị: Bàn sau cập nhật.</p>
+</li>
+</ul>
+<p data-start="3746" data-end="3783"><strong data-start="3746" data-end="3781">PATCH /api/v1/tables/:id/status</strong></p>
+<ul data-start="3784" data-end="3893">
+<li data-start="3784" data-end="3817">
+<p data-start="3786" data-end="3817">Mục đích: Đổi trạng thái bàn.</p>
+</li>
+<li data-start="3818" data-end="3872">
+<p data-start="3820" data-end="3872">Cách hoạt động: Kiểm tra hợp lệ chuyển trạng thái.</p>
+</li>
+<li data-start="3873" data-end="3893">
+<p data-start="3875" data-end="3893">Hiển thị: Bàn mới.</p>
+</li>
+</ul>
+<p data-start="3895" data-end="3932"><strong data-start="3895" data-end="3930">PATCH /api/v1/tables/:id/active</strong></p>
+<ul data-start="3933" data-end="4047">
+<li data-start="3933" data-end="3984">
+<p data-start="3935" data-end="3984">Mục đích: Bật/tắt hoạt động (ẩn bàn khỏi lưới).</p>
+</li>
+<li data-start="3985" data-end="4026">
+<p data-start="3987" data-end="4026">Cách hoạt động: Cập nhật cờ <code data-start="4015" data-end="4023">active</code>.</p>
+</li>
+<li data-start="4027" data-end="4047">
+<p data-start="4029" data-end="4047">Hiển thị: Bàn mới.</p>
+</li>
+</ul>
+<p data-start="4049" data-end="4084"><strong data-start="4049" data-end="4082">PATCH /api/v1/tables/:id/rate</strong></p>
+<ul data-start="4085" data-end="4262">
+<li data-start="4085" data-end="4151">
+<p data-start="4087" data-end="4151">Mục đích: Cố định đơn giá/giờ riêng cho bàn (ghi đè loại bàn).</p>
+</li>
+<li data-start="4152" data-end="4241">
+<p data-start="4154" data-end="4241">Cách hoạt động: Lưu <code data-start="4174" data-end="4187">ratePerHour</code> hoặc xoá về <code data-start="4200" data-end="4206">null</code> để dùng theo loại bàn/khung giờ.</p>
+</li>
+<li data-start="4242" data-end="4262">
+<p data-start="4244" data-end="4262">Hiển thị: Bàn mới.</p>
+</li>
+</ul>
+<p data-start="4264" data-end="4298"><strong data-start="4264" data-end="4296">PATCH /api/v1/tables/reorder</strong></p>
+<ul data-start="4299" data-end="4436">
+<li data-start="4299" data-end="4345">
+<p data-start="4301" data-end="4345">Mục đích: Sắp xếp thứ tự hiển thị các bàn.</p>
+</li>
+<li data-start="4346" data-end="4408">
+<p data-start="4348" data-end="4408">Cách hoạt động: Bulk cập nhật <code data-start="4378" data-end="4390">orderIndex</code> theo danh sách.</p>
+</li>
+<li data-start="4409" data-end="4436">
+<p data-start="4411" data-end="4436">Hiển thị: <code data-start="4421" data-end="4435">{ ok: true }</code>.</p>
+</li>
+</ul>
+<p data-start="4438" data-end="4469"><strong data-start="4438" data-end="4467">DELETE /api/v1/tables/:id</strong></p>
+<ul data-start="4470" data-end="4605">
+<li data-start="4470" data-end="4492">
+<p data-start="4472" data-end="4492">Mục đích: Xoá bàn.</p>
+</li>
+<li data-start="4493" data-end="4577">
+<p data-start="4495" data-end="4577">Cách hoạt động: Chặn xoá nếu có session mở/đã từng có bill; nếu an toàn thì xoá.</p>
+</li>
+<li data-start="4578" data-end="4605">
+<p data-start="4580" data-end="4605">Hiển thị: <code data-start="4590" data-end="4604">{ ok: true }</code>.</p>
+</li>
+</ul>
+<hr data-start="4607" data-end="4610">
+<h1 data-start="4612" data-end="4636">Table Types (loại bàn)</h1>
+<p data-start="4637" data-end="4666"><strong data-start="4637" data-end="4664">GET /api/v1/table-types</strong></p>
+<ul data-start="4667" data-end="4870">
+<li data-start="4667" data-end="4713">
+<p data-start="4669" data-end="4713">Mục đích: Danh sách loại bàn &amp; trạng thái.</p>
+</li>
+<li data-start="4714" data-end="4770">
+<p data-start="4716" data-end="4770">Cách hoạt động: Lọc <code data-start="4736" data-end="4755">active,branchId,q</code>; phân trang.</p>
+</li>
+<li data-start="4771" data-end="4870">
+<p data-start="4773" data-end="4870">Hiển thị: <code data-start="4783" data-end="4859">data[] {id, name, code, defaultRatePerHour, dayRates[], active, branchId }</code>, <code data-start="4861" data-end="4869">paging</code>.</p>
+</li>
+</ul>
+<p data-start="4872" data-end="4905"><strong data-start="4872" data-end="4903">GET /api/v1/table-types/:id</strong></p>
+<ul data-start="4906" data-end="5038">
+<li data-start="4906" data-end="4938">
+<p data-start="4908" data-end="4938">Mục đích: Chi tiết loại bàn.</p>
+</li>
+<li data-start="4939" data-end="5038">
+<p data-start="4941" data-end="5038">Hiển thị: Thông tin loại bàn + cấu hình khung giờ <code data-start="4991" data-end="5037">dayRates [{days[], start, end, ratePerHour}]</code>.</p>
+</li>
+</ul>
+<p data-start="5040" data-end="5070"><strong data-start="5040" data-end="5068">POST /api/v1/table-types</strong></p>
+<ul data-start="5071" data-end="5220">
+<li data-start="5071" data-end="5102">
+<p data-start="5073" data-end="5102">Mục đích: Tạo loại bàn mới.</p>
+</li>
+<li data-start="5103" data-end="5190">
+<p data-start="5105" data-end="5190">Cách hoạt động: Validate <code data-start="5130" data-end="5136">code</code> duy nhất (theo thiết kế hiện tại) + cấu hình rates.</p>
+</li>
+<li data-start="5191" data-end="5220">
+<p data-start="5193" data-end="5220">Hiển thị: Loại bàn vừa tạo.</p>
+</li>
+</ul>
+<p data-start="5222" data-end="5255"><strong data-start="5222" data-end="5253">PUT /api/v1/table-types/:id</strong></p>
+<ul data-start="5256" data-end="5319">
+<li data-start="5256" data-end="5288">
+<p data-start="5258" data-end="5288">Mục đích: Cập nhật loại bàn.</p>
+</li>
+<li data-start="5289" data-end="5319">
+<p data-start="5291" data-end="5319">Hiển thị: Loại bàn cập nhật.</p>
+</li>
+</ul>
+<p data-start="5321" data-end="5363"><strong data-start="5321" data-end="5361">PATCH /api/v1/table-types/:id/active</strong></p>
+<ul data-start="5364" data-end="5410">
+<li data-start="5364" data-end="5410">
+<p data-start="5366" data-end="5410">Bật/tắt hoạt động. → Hiển thị: Loại bàn mới.</p>
+</li>
+</ul>
+<p data-start="5412" data-end="5457"><strong data-start="5412" data-end="5455">PATCH /api/v1/table-types/:id/day-rates</strong></p>
+<ul data-start="5458" data-end="5605">
+<li data-start="5458" data-end="5514">
+<p data-start="5460" data-end="5514">Mục đích: Cấu hình khung giờ (theo ngày trong tuần).</p>
+</li>
+<li data-start="5515" data-end="5577">
+<p data-start="5517" data-end="5577">Cách hoạt động: Kiểm tra chồng lấn time-range; lưu hợp lệ.</p>
+</li>
+<li data-start="5578" data-end="5605">
+<p data-start="5580" data-end="5605">Hiển thị: <code data-start="5590" data-end="5600">dayRates</code> mới.</p>
+</li>
+</ul>
+<p data-start="5607" data-end="5643"><strong data-start="5607" data-end="5641">DELETE /api/v1/table-types/:id</strong></p>
+<ul data-start="5644" data-end="5752">
+<li data-start="5644" data-end="5671">
+<p data-start="5646" data-end="5671">Mục đích: Xoá loại bàn.</p>
+</li>
+<li data-start="5672" data-end="5724">
+<p data-start="5674" data-end="5724">Cách hoạt động: Chặn xoá nếu còn bàn tham chiếu.</p>
+</li>
+<li data-start="5725" data-end="5752">
+<p data-start="5727" data-end="5752">Hiển thị: <code data-start="5737" data-end="5751">{ ok: true }</code>.</p>
+</li>
+</ul>
+<hr data-start="5754" data-end="5757">
+<h1 data-start="5759" data-end="5807">Sessions (phiên chơi – check-in/giờ &amp; dịch vụ)</h1>
+<p data-start="5808" data-end="5834"><strong data-start="5808" data-end="5832">GET /api/v1/sessions</strong></p>
+<ul data-start="5835" data-end="6137">
+<li data-start="5835" data-end="5895">
+<p data-start="5837" data-end="5895">Mục đích: Danh sách phiên (mở/đóng) cho tra cứu/quản lý.</p>
+</li>
+<li data-start="5896" data-end="5970">
+<p data-start="5898" data-end="5970">Cách hoạt động: Lọc <code data-start="5918" data-end="5955">status, tableId, branchId, from, to</code>; phân trang.</p>
+</li>
+<li data-start="5971" data-end="6137">
+<p data-start="5973" data-end="6137">Hiển thị: <code data-start="5983" data-end="6126">data[] { id, table{ id,name }, staff{ id,name }, startTime, endTime?, items[], minutes{ raw,bill }, amounts{ play, service, total }, status }</code>, <code data-start="6128" data-end="6136">paging</code>.</p>
+</li>
+</ul>
+<p data-start="6139" data-end="6169"><strong data-start="6139" data-end="6167">GET /api/v1/sessions/:id</strong></p>
+<ul data-start="6170" data-end="6337">
+<li data-start="6170" data-end="6201">
+<p data-start="6172" data-end="6201">Mục đích: Chi tiết 1 phiên.</p>
+</li>
+<li data-start="6202" data-end="6337">
+<p data-start="6204" data-end="6337">Hiển thị: Thông tin đầy đủ + <code data-start="6233" data-end="6252">tableTypeSnapshot</code>, <code data-start="6254" data-end="6275">billingRuleSnapshot</code>, <code data-start="6277" data-end="6336">items [{productId,nameSnapshot,priceSnapshot,qty,amount}]</code>.</p>
+</li>
+</ul>
+<p data-start="6339" data-end="6371"><strong data-start="6339" data-end="6369">POST /api/v1/sessions/open</strong></p>
+<ul data-start="6372" data-end="6618">
+<li data-start="6372" data-end="6412">
+<p data-start="6374" data-end="6412">Mục đích: Check-in mở phiên cho bàn.</p>
+</li>
+<li data-start="6413" data-end="6521">
+<p data-start="6415" data-end="6521">Cách hoạt động: Khóa logic “1 bàn 1 phiên mở”; snapshot đơn giá/khung giờ/billing rule tại thời điểm mở.</p>
+</li>
+<li data-start="6522" data-end="6618">
+<p data-start="6524" data-end="6618">Hiển thị: <code data-start="6534" data-end="6543">session</code> mới (<code data-start="6549" data-end="6565">status: 'open'</code>, <code data-start="6567" data-end="6578">startTime</code>, <code data-start="6580" data-end="6593">ratePerHour</code>, <code data-start="6595" data-end="6604">minutes</code> ban đầu = 0).</p>
+</li>
+</ul>
+<p data-start="6620" data-end="6657"><strong data-start="6620" data-end="6655">POST /api/v1/sessions/:id/items</strong></p>
+<ul data-start="6658" data-end="6829">
+<li data-start="6658" data-end="6693">
+<p data-start="6660" data-end="6693">Mục đích: Thêm đồ uống/dịch vụ.</p>
+</li>
+<li data-start="6694" data-end="6771">
+<p data-start="6696" data-end="6771">Cách hoạt động: Lấy <code data-start="6716" data-end="6732">productId, qty</code> → snapshot <code data-start="6744" data-end="6756">name/price</code> vào <code data-start="6761" data-end="6768">items</code>.</p>
+</li>
+<li data-start="6772" data-end="6829">
+<p data-start="6774" data-end="6829">Hiển thị: <code data-start="6784" data-end="6799">session.items</code> mới + tổng <code data-start="6811" data-end="6828">amounts.service</code>.</p>
+</li>
+</ul>
+<p data-start="6831" data-end="6875"><strong data-start="6831" data-end="6873">PUT /api/v1/sessions/:id/items/:itemId</strong></p>
+<ul data-start="6876" data-end="6959">
+<li data-start="6876" data-end="6908">
+<p data-start="6878" data-end="6908">Mục đích: Sửa số lượng item.</p>
+</li>
+<li data-start="6909" data-end="6959">
+<p data-start="6911" data-end="6959">Hiển thị: <code data-start="6921" data-end="6930">session</code> cập nhật (recalc <code data-start="6948" data-end="6957">service</code>).</p>
+</li>
+</ul>
+<p data-start="6961" data-end="7008"><strong data-start="6961" data-end="7006">DELETE /api/v1/sessions/:id/items/:itemId</strong></p>
+<ul data-start="7009" data-end="7064">
+<li data-start="7009" data-end="7032">
+<p data-start="7011" data-end="7032">Mục đích: Xoá item.</p>
+</li>
+<li data-start="7033" data-end="7064">
+<p data-start="7035" data-end="7064">Hiển thị: <code data-start="7045" data-end="7054">session</code> cập nhật.</p>
+</li>
+</ul>
+<p data-start="7066" data-end="7111"><strong data-start="7066" data-end="7109">POST /api/v1/sessions/:id/preview-close</strong></p>
+<ul data-start="7112" data-end="7418">
+<li data-start="7112" data-end="7171">
+<p data-start="7114" data-end="7171">Mục đích: Xem trước tiền khi kết thúc (không tạo bill).</p>
+</li>
+<li data-start="7172" data-end="7317">
+<p data-start="7174" data-end="7317">Cách hoạt động: Chốt tạm <code data-start="7199" data-end="7208">endTime</code> → tính <code data-start="7216" data-end="7229">minutes.raw</code> → <code data-start="7232" data-end="7246">minutes.bill</code> theo rounding/grace → tính <code data-start="7274" data-end="7288">amounts.play</code> + áp khuyến mãi (nếu bật).</p>
+</li>
+<li data-start="7318" data-end="7418">
+<p data-start="7320" data-end="7418">Hiển thị: <code data-start="7330" data-end="7417">{ minutes{raw,bill}, amounts{ play, service, discount, total }, appliedPromotions[] }</code>.</p>
+</li>
+</ul>
+<p data-start="7420" data-end="7460"><strong data-start="7420" data-end="7458">POST /api/v1/sessions/:id/checkout</strong></p>
+<ul data-start="7461" data-end="7718">
+<li data-start="7461" data-end="7504">
+<p data-start="7463" data-end="7504">Mục đích: Kết thúc phiên &amp; tạo hóa đơn.</p>
+</li>
+<li data-start="7505" data-end="7679">
+<p data-start="7507" data-end="7679">Cách hoạt động: Transaction: chốt <code data-start="7541" data-end="7550">endTime</code> → tạo <code data-start="7557" data-end="7563">Bill</code> snapshot (play/service/discount/tổng) → đổi trạng thái bàn về <code data-start="7626" data-end="7637">available</code>. Nếu gửi <code data-start="7647" data-end="7656">payment</code>, sẽ set <code data-start="7665" data-end="7676">paid=true</code>.</p>
+</li>
+<li data-start="7680" data-end="7718">
+<p data-start="7682" data-end="7718">Hiển thị: <code data-start="7692" data-end="7698">bill</code> vừa tạo (để in/QR).</p>
+</li>
+</ul>
+<p data-start="7720" data-end="7756"><strong data-start="7720" data-end="7754">POST /api/v1/sessions/:id/void</strong></p>
+<ul data-start="7757" data-end="7915">
+<li data-start="7757" data-end="7799">
+<p data-start="7759" data-end="7799">Mục đích: Huỷ phiên (không tính tiền).</p>
+</li>
+<li data-start="7800" data-end="7876">
+<p data-start="7802" data-end="7876">Cách hoạt động: Chỉ cho phép khi chưa checkout; đánh dấu <code data-start="7859" data-end="7865">void</code> + lý do.</p>
+</li>
+<li data-start="7877" data-end="7915">
+<p data-start="7879" data-end="7915">Hiển thị: <code data-start="7889" data-end="7898">session</code> (status <code data-start="7907" data-end="7913">void</code>).</p>
+</li>
+</ul>
+<hr data-start="7917" data-end="7920">
+<h1 data-start="7922" data-end="7951">Products (sản phẩm/dịch vụ)</h1>
+<p data-start="7952" data-end="7978"><strong data-start="7952" data-end="7976">GET /api/v1/products</strong></p>
+<ul data-start="7979" data-end="8218">
+<li data-start="7979" data-end="8033">
+<p data-start="7981" data-end="8033">Mục đích: Danh sách sản phẩm cho màn thêm dịch vụ.</p>
+</li>
+<li data-start="8034" data-end="8109">
+<p data-start="8036" data-end="8109">Cách hoạt động: Lọc <code data-start="8056" data-end="8089">q, categoryId, active, branchId</code>; phân trang/sort.</p>
+</li>
+<li data-start="8110" data-end="8218">
+<p data-start="8112" data-end="8218">Hiển thị: <code data-start="8122" data-end="8207">data[] {id, name, sku, price, category{ id,name,color }, images[], tags[], active }</code>, <code data-start="8209" data-end="8217">paging</code>.</p>
+</li>
+</ul>
+<p data-start="8220" data-end="8271"><strong data-start="8220" data-end="8248">GET /api/v1/products/:id</strong> – Chi tiết 1 sản phẩm.</p>
+<p data-start="8273" data-end="8734"><strong data-start="8273" data-end="8298">POST /api/v1/products</strong> – Tạo sản phẩm mới (đồ uống, snack, giờ combo nếu có).<br data-start="8353" data-end="8356">
+<strong data-start="8356" data-end="8384">PUT /api/v1/products/:id</strong> – Cập nhật.<br data-start="8396" data-end="8399">
+<strong data-start="8399" data-end="8436">PATCH /api/v1/products/:id/active</strong> – Ẩn/hiện.<br data-start="8447" data-end="8450">
+<strong data-start="8450" data-end="8486">PATCH /api/v1/products/:id/price</strong> – Đổi giá.<br data-start="8497" data-end="8500">
+<strong data-start="8500" data-end="8537">PATCH /api/v1/products/:id/images</strong> – Cập nhật ảnh.<br data-start="8553" data-end="8556">
+<strong data-start="8556" data-end="8590">POST /api/v1/products/:id/tags</strong> / <strong data-start="8593" data-end="8629">DELETE /api/v1/products/:id/tags</strong> – Thêm/xoá tag.<br data-start="8645" data-end="8648">
+<strong data-start="8648" data-end="8679">DELETE /api/v1/products/:id</strong> – Xoá (chặn nếu đang nằm trong session mở/đã có bill).</p>
+<hr data-start="8736" data-end="8739">
+<h1 data-start="8741" data-end="8773">Categories (danh mục sản phẩm)</h1>
+<p data-start="8774" data-end="8802"><strong data-start="8774" data-end="8800">GET /api/v1/categories</strong></p>
+<ul data-start="8803" data-end="8937">
+<li data-start="8803" data-end="8852">
+<p data-start="8805" data-end="8852">Mục đích: Lọc theo loại (đồ uống/đồ ăn/khác).</p>
+</li>
+<li data-start="8853" data-end="8937">
+<p data-start="8855" data-end="8937">Hiển thị: <code data-start="8865" data-end="8926">data[] { id,name,code,color,active,branchId,productCount? }</code>, <code data-start="8928" data-end="8936">paging</code>.</p>
+</li>
+</ul>
+<p data-start="8939" data-end="9135"><strong data-start="8939" data-end="8969">GET /api/v1/categories/:id</strong>, <strong data-start="8971" data-end="8998">POST /api/v1/categories</strong>, <strong data-start="9000" data-end="9030">PUT /api/v1/categories/:id</strong>, <strong data-start="9032" data-end="9071">PATCH /api/v1/categories/:id/active</strong>, <strong data-start="9073" data-end="9106">DELETE /api/v1/categories/:id</strong> (chặn xoá nếu còn sản phẩm).</p>
+<hr data-start="9137" data-end="9140">
+<h1 data-start="9142" data-end="9159">Bills (hóa đơn)</h1>
+<p data-start="9160" data-end="9183"><strong data-start="9160" data-end="9181">GET /api/v1/bills</strong></p>
+<ul data-start="9184" data-end="9488">
+<li data-start="9184" data-end="9260">
+<p data-start="9186" data-end="9260">Mục đích: Danh sách hóa đơn (lọc theo ngày/đã trả/chưa trả/phương thức).</p>
+</li>
+<li data-start="9261" data-end="9343">
+<p data-start="9263" data-end="9343">Cách hoạt động: Lọc <code data-start="9283" data-end="9323">from,to,branchId,tableId,paid,method,q</code>; phân trang/sort.</p>
+</li>
+<li data-start="9344" data-end="9488">
+<p data-start="9346" data-end="9488">Hiển thị: <code data-start="9356" data-end="9477">data[] { id, code, table{name}, sessionId, staff{name}, paid, method, paidAt, subtotal{play,service}, discount, total }</code>, <code data-start="9479" data-end="9487">paging</code>.</p>
+</li>
+</ul>
+<p data-start="9490" data-end="9517"><strong data-start="9490" data-end="9515">GET /api/v1/bills/:id</strong></p>
+<ul data-start="9518" data-end="9764">
+<li data-start="9518" data-end="9563">
+<p data-start="9520" data-end="9563">Mục đích: Chi tiết hóa đơn để in/tra cứu.</p>
+</li>
+<li data-start="9564" data-end="9764">
+<p data-start="9566" data-end="9764">Hiển thị: <code data-start="9576" data-end="9763">bill { code, table{name}, time{ start,end, minutes{raw,bill} }, items[], amounts{ play, service, discount, total }, payment{ paid, method, paidAt, amount, ref }, shopInfo (từ Setting) }</code>.</p>
+</li>
+</ul>
+<p data-start="9766" data-end="9798"><strong data-start="9766" data-end="9796">POST /api/v1/bills/:id/pay</strong></p>
+<ul data-start="9799" data-end="9945">
+<li data-start="9799" data-end="9841">
+<p data-start="9801" data-end="9841">Mục đích: Thanh toán hóa đơn chưa trả.</p>
+</li>
+<li data-start="9842" data-end="9910">
+<p data-start="9844" data-end="9910">Cách hoạt động: Ghi <code data-start="9864" data-end="9885">method, amount, ref</code>; đánh dấu <code data-start="9896" data-end="9907">paid=true</code>.</p>
+</li>
+<li data-start="9911" data-end="9945">
+<p data-start="9913" data-end="9945">Hiển thị: <code data-start="9923" data-end="9929">bill</code> sau thanh toán.</p>
+</li>
+</ul>
+<p data-start="9947" data-end="10275"><strong data-start="9947" data-end="9979">PATCH /api/v1/bills/:id/note</strong> – Ghi chú nội bộ cho bill.<br data-start="10006" data-end="10009">
+<strong data-start="10009" data-end="10040">GET /api/v1/bills/:id/print</strong> – Xuất PDF/HTML để in (58mm/80mm/A4).<br data-start="10078" data-end="10081">
+<strong data-start="10081" data-end="10109">GET /api/v1/bills/:id/qr</strong> – Ảnh QR dẫn tới e-receipt (nếu bật).<br data-start="10147" data-end="10150">
+<strong data-start="10150" data-end="10183">GET /api/v1/bills/export.xlsx</strong> – Xuất Excel danh sách bill theo bộ lọc.<br data-start="10224" data-end="10227">
+<strong data-start="10227" data-end="10255">DELETE /api/v1/bills/:id</strong> – Xoá bill (admin).</p>
+<hr data-start="10277" data-end="10280">
+<h1 data-start="10282" data-end="10307">Promotions (khuyến mãi)</h1>
+<p data-start="10308" data-end="10336"><strong data-start="10308" data-end="10334">GET /api/v1/promotions</strong></p>
+<ul data-start="10337" data-end="10578">
+<li data-start="10337" data-end="10372">
+<p data-start="10339" data-end="10372">Mục đích: Danh sách khuyến mãi.</p>
+</li>
+<li data-start="10373" data-end="10452">
+<p data-start="10375" data-end="10452">Cách hoạt động: Lọc <code data-start="10395" data-end="10437">active,branchId,scope(time|product|bill)</code>; phân trang.</p>
+</li>
+<li data-start="10453" data-end="10578">
+<p data-start="10455" data-end="10578">Hiển thị: <code data-start="10465" data-end="10577">data[] { id, name, code, scope, rule, discount{type:'percent|amount', value, maxAmount?}, applyOrder, active }</code>.</p>
+</li>
+</ul>
+<p data-start="10580" data-end="10937"><strong data-start="10580" data-end="10610">GET /api/v1/promotions/:id</strong> – Chi tiết 1 KM (rule theo khung giờ, DOW, mặt hàng, hóa đơn…).<br data-start="10674" data-end="10677">
+<strong data-start="10677" data-end="10704">POST /api/v1/promotions</strong> – Tạo KM.<br data-start="10714" data-end="10717">
+<strong data-start="10717" data-end="10747">PUT /api/v1/promotions/:id</strong> – Cập nhật.<br data-start="10759" data-end="10762">
+<strong data-start="10762" data-end="10801">PATCH /api/v1/promotions/:id/active</strong> – Bật/tắt.<br data-start="10812" data-end="10815">
+<strong data-start="10815" data-end="10859">PATCH /api/v1/promotions/:id/apply-order</strong> – Ưu tiên áp dụng khi có nhiều KM.<br data-start="10894" data-end="10897">
+<strong data-start="10897" data-end="10930">DELETE /api/v1/promotions/:id</strong> – Xoá.</p>
+<blockquote data-start="10939" data-end="11120">
+<p data-start="10941" data-end="11120">Khi checkout/preview, hệ thống nạp KM hiệu lực tại <code data-start="10992" data-end="11001">endTime</code>/thời điểm hiện tại, áp theo <code data-start="11030" data-end="11042">applyOrder</code> và <code data-start="11046" data-end="11057">stackable</code> (nếu có), trả về danh sách KM đã áp và số tiền giảm tương ứng.</p>
+</blockquote>
+<hr data-start="11122" data-end="11125">
+<h1 data-start="11127" data-end="11155">Reports (báo cáo/thống kê)</h1>
+<p data-start="11156" data-end="11189"><strong data-start="11156" data-end="11187">GET /api/v1/reports/summary</strong></p>
+<ul data-start="11190" data-end="11393">
+<li data-start="11190" data-end="11247">
+<p data-start="11192" data-end="11247">Mục đích: Tổng quan doanh thu trong khoảng thời gian.</p>
+</li>
+<li data-start="11248" data-end="11313">
+<p data-start="11250" data-end="11313">Cách hoạt động: Aggregation theo <code data-start="11283" data-end="11310">from,to,branchId,paidOnly</code>.</p>
+</li>
+<li data-start="11314" data-end="11393">
+<p data-start="11316" data-end="11393">Hiển thị: <code data-start="11326" data-end="11392">{ revenue, bills, avgBill, playAmount, serviceAmount, discount }</code>.</p>
+</li>
+</ul>
+<p data-start="11395" data-end="11426"><strong data-start="11395" data-end="11424">GET /api/v1/reports/daily</strong></p>
+<ul data-start="11427" data-end="11526">
+<li data-start="11427" data-end="11478">
+<p data-start="11429" data-end="11478">Mục đích: Doanh thu theo ngày (dòng thời gian).</p>
+</li>
+<li data-start="11479" data-end="11526">
+<p data-start="11481" data-end="11526">Hiển thị: <code data-start="11491" data-end="11525">items[] { date, revenue, bills }</code>.</p>
+</li>
+</ul>
+<p data-start="11528" data-end="11561"><strong data-start="11528" data-end="11559">GET /api/v1/reports/revenue</strong></p>
+<ul data-start="11562" data-end="11657">
+<li data-start="11562" data-end="11616">
+<p data-start="11564" data-end="11616">Mục đích: Doanh thu theo groupBy (day/week/month).</p>
+</li>
+<li data-start="11617" data-end="11657">
+<p data-start="11619" data-end="11657">Hiển thị: <code data-start="11629" data-end="11656">series[] { label, value }</code>.</p>
+</li>
+</ul>
+<p data-start="11659" data-end="11697"><strong data-start="11659" data-end="11695">GET /api/v1/reports/top-products</strong></p>
+<ul data-start="11698" data-end="11806">
+<li data-start="11698" data-end="11750">
+<p data-start="11700" data-end="11750">Mục đích: Top sản phẩm bán chạy / doanh thu cao.</p>
+</li>
+<li data-start="11751" data-end="11806">
+<p data-start="11753" data-end="11806">Hiển thị: <code data-start="11763" data-end="11805">items[] { productId, name, qty, amount }</code>.</p>
+</li>
+</ul>
+<p data-start="11808" data-end="11844"><strong data-start="11808" data-end="11842">GET /api/v1/reports/top-tables</strong></p>
+<ul data-start="11845" data-end="11953">
+<li data-start="11845" data-end="11895">
+<p data-start="11847" data-end="11895">Mục đích: Bàn chơi nhiều phút / doanh thu cao.</p>
+</li>
+<li data-start="11896" data-end="11953">
+<p data-start="11898" data-end="11953">Hiển thị: <code data-start="11908" data-end="11952">items[] { tableId, name, minutes, amount }</code>.</p>
+</li>
+</ul>
+<p data-start="11955" data-end="11986"><strong data-start="11955" data-end="11984">GET /api/v1/reports/staff</strong></p>
+<ul data-start="11987" data-end="12083">
+<li data-start="11987" data-end="12026">
+<p data-start="11989" data-end="12026">Mục đích: Hiệu suất theo nhân viên.</p>
+</li>
+<li data-start="12027" data-end="12083">
+<p data-start="12029" data-end="12083">Hiển thị: <code data-start="12039" data-end="12082">items[] { staffId, name, bills, revenue }</code>.</p>
+</li>
+</ul>
+<p data-start="12085" data-end="12120"><strong data-start="12085" data-end="12118">GET /api/v1/reports/dashboard</strong></p>
+<ul data-start="12121" data-end="12278">
+<li data-start="12121" data-end="12170">
+<p data-start="12123" data-end="12170">Mục đích: Tập dữ liệu cho dashboard tổng hợp.</p>
+</li>
+<li data-start="12171" data-end="12278">
+<p data-start="12173" data-end="12278">Hiển thị: <code data-start="12183" data-end="12233">cards { revenueToday, billsToday, avgBill, ... }</code>, <code data-start="12235" data-end="12277">charts { daily, topProducts, topTables }</code>.</p>
+</li>
+</ul>
+<hr data-start="12280" data-end="12283">
+<h1 data-start="12285" data-end="12315">Settings (cấu hình hệ thống)</h1>
+<p data-start="12316" data-end="12352"><strong data-start="12316" data-end="12350">GET /api/v1/settings/effective</strong></p>
+<ul data-start="12353" data-end="12600">
+<li data-start="12353" data-end="12430">
+<p data-start="12355" data-end="12430">Mục đích: Lấy cấu hình “đang hiệu lực” (ưu tiên branch, fallback global).</p>
+</li>
+<li data-start="12431" data-end="12600">
+<p data-start="12433" data-end="12600">Hiển thị: <code data-start="12443" data-end="12599">{ shop, billing{roundingStep, graceMinutes, currency}, print{header,footer,width,showQr}, eReceipt{enabled, baseUrl}, backup{enabled,timeOfDay,maxFiles} }</code>.</p>
+</li>
+</ul>
+<p data-start="12602" data-end="12636"><strong data-start="12602" data-end="12634">GET /api/v1/settings/current</strong></p>
+<ul data-start="12637" data-end="12751">
+<li data-start="12637" data-end="12700">
+<p data-start="12639" data-end="12700">Mục đích: Lấy bản ghi cấu hình hiện tại theo <code data-start="12684" data-end="12691">scope</code> (raw).</p>
+</li>
+<li data-start="12701" data-end="12751">
+<p data-start="12703" data-end="12751">Hiển thị: Document Setting thô (để admin chỉnh).</p>
+</li>
+</ul>
+<p data-start="12753" data-end="13121"><strong data-start="12753" data-end="12777">PUT /api/v1/settings</strong> – Upsert 1 bản ghi setting theo scope/branch.<br data-start="12823" data-end="12826">
+<strong data-start="12826" data-end="12857">PATCH /api/v1/settings/shop</strong> – Sửa nhóm Shop.<br data-start="12874" data-end="12877">
+<strong data-start="12877" data-end="12911">PATCH /api/v1/settings/billing</strong> – Sửa nhóm Billing (rounding/grace).<br data-start="12948" data-end="12951">
+<strong data-start="12951" data-end="12983">PATCH /api/v1/settings/print</strong> – Sửa In ấn.<br data-start="12996" data-end="12999">
+<strong data-start="12999" data-end="13035">PATCH /api/v1/settings/e-receipt</strong> – Bật e-receipt + baseUrl.<br data-start="13062" data-end="13065">
+<strong data-start="13065" data-end="13098">PATCH /api/v1/settings/backup</strong> – Lịch backup tự động.</p>
+<hr data-start="13123" data-end="13126">
+<h1 data-start="13128" data-end="13136">System</h1>
+<p data-start="13137" data-end="13265"><strong data-start="13137" data-end="13159">GET /api/v1/health</strong> – Kiểm tra dịch sống; <code data-start="13182" data-end="13196">{ ok: true }</code>.<br data-start="13197" data-end="13200">
+<strong data-start="13200" data-end="13223">GET /api/v1/version</strong> – Phiên bản API đang chạy; <code data-start="13251" data-end="13264">{ version }</code>.</p>
+<hr data-start="13267" data-end="13270">
+<h2 data-start="13272" data-end="13305">Gợi ý cách dùng nhanh trong UI</h2>
+<ul data-start="13306" data-end="13733">
+<li data-start="13306" data-end="13527">
+<p data-start="13308" data-end="13329"><strong data-start="13308" data-end="13327">Nhân viên quầy:</strong></p>
+<ol data-start="13332" data-end="13527">
+<li data-start="13332" data-end="13527">
+<p data-start="13335" data-end="13527"><code data-start="13335" data-end="13344">/tables</code> (xem lưới) → <code data-start="13358" data-end="13379">POST /sessions/open</code> (check-in) → thêm đồ uống qua <code data-start="13410" data-end="13431">/sessions/:id/items</code> → <code data-start="13434" data-end="13468">POST /sessions/:id/preview-close</code> → <code data-start="13471" data-end="13500">POST /sessions/:id/checkout</code> → In <code data-start="13506" data-end="13524">/bills/:id/print</code>.</p>
+</li>
+</ol>
+</li>
+<li data-start="13528" data-end="13733">
+<p data-start="13530" data-end="13545"><strong data-start="13530" data-end="13543">Quản trị:</strong></p>
+<ul data-start="13548" data-end="13733">
+<li data-start="13548" data-end="13614">
+<p data-start="13550" data-end="13614">Cấu hình giá/khung giờ: <code data-start="13574" data-end="13590">/table-types/*</code>, <code data-start="13592" data-end="13611">/settings/billing</code>.</p>
+</li>
+<li data-start="13617" data-end="13671">
+<p data-start="13619" data-end="13671">Sản phẩm/danh mục: <code data-start="13638" data-end="13651">/products/*</code>, <code data-start="13653" data-end="13668">/categories/*</code>.</p>
+</li>
+<li data-start="13674" data-end="13706">
+<p data-start="13676" data-end="13706">Khuyến mãi: <code data-start="13688" data-end="13703">/promotions/*</code>.</p>
+</li>
+<li data-start="13709" data-end="13733">
+<p data-start="13711" data-end="13733">Báo cáo: <code data-start="13720" data-end="13732">/reports/*</code>.</p>
+</li>
+</ul>
+</li>
+</ul>
+<p data-start="13735" data-end="13900" data-is-last-node="" data-is-only-node="">Nếu bạn muốn mình xuất <strong data-start="13758" data-end="13780">file PDF mô tả API</strong> theo đúng khung trên (mỗi endpoint một block rõ ràng) hoặc bổ sung ví dụ JSON mẫu cho từng response, nói mình tạo ngay.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">đây là cấu trúc code app lê tân bằng vscode expo
+
+https://www.figma.com/design/CSykzyhXkXO0DguRpmo4e8/Thi%E1%BA%BFt-k%E1%BA%BF-giao-di%E1%BB%87n-App-Billiard-Plus?node-id=0-1&amp;t=U9sGRfV8Vs0nVKgN-1
+đây là link figma giao diện giờ tôi cần bạn làm hướng dẫn cách để kết nối đẩy dữ liệu api vào app này hãy chỉ cách thật chi tiết và dễ hiểu</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="123">Tuyệt — mình viết cho bạn một “cookbook” kết nối API → app Expo (vai trò lễ tân). Làm theo thứ tự, copy-paste là chạy được.</p>
+<hr data-start="125" data-end="128">
+<h1 data-start="130" data-end="162">0) Chuẩn bị nhanh (API &amp; CORS)</h1>
+<ol data-start="163" data-end="223">
+<li data-start="163" data-end="223">
+<p data-start="166" data-end="223">Mở <code data-start="169" data-end="187">apiBilliard/.env</code> (backend) và bật CORS cho app Expo:</p>
+</li>
+</ol>
+<pre class="overflow-visible!" data-start="224" data-end="323"><code>perlCORS_ORIGINS=http://localhost:19006,http://127.0.0.1:19006,exp://*,http://192.168.1.*:19006
+</code></pre>
+<ol start="2" data-start="324" data-end="397">
+<li data-start="324" data-end="397">
+<p data-start="327" data-end="397">Chạy API: <code data-start="337" data-end="350">npm run dev</code> (hoặc <code data-start="357" data-end="364">start</code>) và ghi lại <strong data-start="377" data-end="389">BASE_URL</strong>, ví dụ:</p>
+</li>
+</ol>
+<pre class="overflow-visible!" data-start="398" data-end="485"><code>cpphttp://192.168.1.5:3000  // Dùng IP LAN, không dùng localhost cho thiết bị thật
+</code></pre>
+<hr data-start="487" data-end="490">
+<h1 data-start="492" data-end="535">1) Khai báo BASE_URL &amp; env trong app Expo</h1>
+<p data-start="536" data-end="602">Bạn đã có <code data-start="546" data-end="571">src/constants/config.js</code>. Điền baseURL theo môi trường:</p>
+<pre class="overflow-visible!" data-start="604" data-end="949"><code>js// src/constants/config.js
+import Constants from "expo-constants";
+
+const EXTRA = Constants.expoConfig?.extra || {};
+export const CONFIG = {
+  baseURL: EXTRA.API_BASE_URL || "http://192.168.1.5:3000", // IP LAN của backend
+  apiPrefix: "/api/v1",
+  appName: "Billiard Plus",
+};
+export const API_URL = CONFIG.baseURL + CONFIG.apiPrefix;
+</code></pre>
+<p data-start="951" data-end="996">Trong <code data-start="957" data-end="967">app.json</code> (hoặc <code data-start="974" data-end="989">app.config.js</code>) thêm:</p>
+<pre class="overflow-visible!" data-start="997" data-end="1155"><code>json{
+  "expo": {
+    "name": "Billiard Plus",
+    "slug": "billiard-plus",
+    "extra": {
+      "API_BASE_URL": "http://192.168.1.5:3000"
+    }
+  }
+}
+</code></pre>
+<hr data-start="1157" data-end="1160">
+<h1 data-start="1162" data-end="1212">2) Tạo API client dùng Axios + lưu token an toàn</h1>
+<p data-start="1213" data-end="1290">Thư mục của bạn đã có <code data-start="1235" data-end="1246">services/</code>. Ta chuẩn hoá <code data-start="1261" data-end="1269">api.js</code> và <code data-start="1273" data-end="1289">authService.js</code>.</p>
+<h2 data-start="1292" data-end="1316">2.1 <code data-start="1299" data-end="1316">services/api.js</code></h2>
+<pre class="overflow-visible!" data-start="1317" data-end="3391"><code>js// services/api.js
+import axios from "axios";
+import * as SecureStore from "expo-secure-store"; // an toàn hơn AsyncStorage
+import { API_URL } from "../src/constants/config";
+
+const instance = axios.create({
+  baseURL: API_URL,
+  timeout: 15000,
+});
+
+// Đọc token mỗi lần (hoặc cache trong biến cục bộ)
+async function getAccessToken() {
+  return await SecureStore.getItemAsync("accessToken");
+}
+async function getRefreshToken() {
+  return await SecureStore.getItemAsync("refreshToken");
+}
+
+// Gắn Authorization
+instance.interceptors.request.use(async (config) =&gt; {
+  const token = await getAccessToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// Tự refresh khi 401
+let isRefreshing = false;
+let queue = [];
+function flushQueue(err, token = null) {
+  queue.forEach(p =&gt; (err ? p.reject(err) : p.resolve(token)));
+  queue = [];
+}
+
+instance.interceptors.response.use(
+  (r) =&gt; r,
+  async (error) =&gt; {
+    const original = error.config;
+    if (error.response?.status === 401 &amp;&amp; !original._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) =&gt; {
+          queue.push({ resolve, reject });
+        }).then((newToken) =&gt; {
+          original.headers.Authorization = `Bearer ${newToken}`;
+          return axios(original);
+        });
+      }
+      original._retry = true;
+      isRefreshing = true;
+      try {
+        const rt = await getRefreshToken();
+        if (!rt) throw error;
+        const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: rt });
+        const newToken = res.data?.accessToken;
+        if (newToken) {
+          await SecureStore.setItemAsync("accessToken", newToken);
+          flushQueue(null, newToken);
+          original.headers.Authorization = `Bearer ${newToken}`;
+          return axios(original);
+        }
+        throw error;
+      } catch (e) {
+        flushQueue(e, null);
+        // tuỳ ý: điều hướng về Login
+        throw e;
+      } finally {
+        isRefreshing = false;
+      }
+    }
+    throw error;
+  }
+);
+
+export default instance;
+</code></pre>
+<h2 data-start="3393" data-end="3425">2.2 <code data-start="3400" data-end="3425">services/authService.js</code></h2>
+<pre class="overflow-visible!" data-start="3426" data-end="4267"><code>js// services/authService.js
+import api from "./api";
+import * as SecureStore from "expo-secure-store";
+
+export async function login({ username, password }) {
+  const { data } = await api.post("/auth/login", { username, password });
+  const { accessToken, refreshToken, user } = data || {};
+  await SecureStore.setItemAsync("accessToken", accessToken);
+  await SecureStore.setItemAsync("refreshToken", refreshToken);
+  await SecureStore.setItemAsync("user", JSON.stringify(user));
+  return user;
+}
+
+export async function me() {
+  const { data } = await api.get("/auth/me");
+  return data?.user;
+}
+
+export async function logout() {
+  try { await api.post("/auth/logout"); } catch {}
+  await SecureStore.deleteItemAsync("accessToken");
+  await SecureStore.deleteItemAsync("refreshToken");
+  await SecureStore.deleteItemAsync("user");
+}
+</code></pre>
+<hr data-start="4269" data-end="4272">
+<h1 data-start="4274" data-end="4308">3) AuthContext + bảo vệ màn hình</h1>
+<p data-start="4309" data-end="4359">Tạo context để toàn app biết trạng thái đăng nhập.</p>
+<pre class="overflow-visible!" data-start="4361" data-end="5383"><code>js// src/context/AuthContext.js
+import React, { createContext, useEffect, useState, useMemo } from "react";
+import * as SecureStore from "expo-secure-store";
+import { login as doLogin, logout as doLogout, me } from "../../services/authService";
+
+export const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() =&gt; {
+    (async () =&gt; {
+      const saved = await SecureStore.getItemAsync("user");
+      if (saved) setUser(JSON.parse(saved));
+      // Optional: verify token still valid
+      try { const u = await me(); if (u) setUser(u); } catch {}
+      setReady(true);
+    })();
+  }, []);
+
+  const value = useMemo(() =&gt; ({
+    user,
+    ready,
+    login: async (cred) =&gt; { const u = await doLogin(cred); setUser(u); },
+    logout: async () =&gt; { await doLogout(); setUser(null); },
+  }), [user, ready]);
+
+  return &lt;AuthContext.Provider value={value}&gt;{children}&lt;/AuthContext.Provider&gt;;
+}
+</code></pre>
+<p data-start="5385" data-end="5400">Trong <code data-start="5391" data-end="5399">App.js</code>:</p>
+<pre class="overflow-visible!" data-start="5401" data-end="5580"><code>jsimport { AuthProvider } from "./src/context/AuthContext";
+export default function App() {
+  return (
+    &lt;AuthProvider&gt;
+      &lt;AppNavigator /&gt;
+    &lt;/AuthProvider&gt;
+  );
+}
+</code></pre>
+<p data-start="5582" data-end="5696">Trong <code data-start="5588" data-end="5616">navigation/AppNavigator.js</code>: nếu đã có, chỉ cần kiểm tra <code data-start="5646" data-end="5652">user</code> để điều hướng <code data-start="5667" data-end="5680">LoginScreen</code> ↔ <code data-start="5683" data-end="5695">HomeScreen</code>.</p>
+<hr data-start="5698" data-end="5701">
+<h1 data-start="5703" data-end="5758">4) Service theo module (bạn đã có folder <code data-start="5746" data-end="5757">services/</code>)</h1>
+<p data-start="5759" data-end="5810">Tạo nhanh service cho các màn chính mà lễ tân dùng.</p>
+<pre class="overflow-visible!" data-start="5812" data-end="7629"><code>js// services/tableService.js
+import api from "./api";
+export async function listTables(params={}) {
+  const { data } = await api.get("/tables", { params });
+  return data;
+}
+export async function getTable(id) {
+  const { data } = await api.get(`/tables/${id}`);
+  return data;
+}
+
+// services/sessionService.js
+import api from "./api";
+export async function openSession({ tableId, startTime }) {
+  const { data } = await api.post("/sessions/open", { tableId, startTime });
+  return data?.session || data;
+}
+export async function addItem(sessionId, { productId, qty }) {
+  const { data } = await api.post(`/sessions/${sessionId}/items`, { productId, qty });
+  return data?.session || data;
+}
+export async function updateItemQty(sessionId, itemId, qty) {
+  const { data } = await api.put(`/sessions/${sessionId}/items/${itemId}`, { qty });
+  return data?.session || data;
+}
+export async function removeItem(sessionId, itemId) {
+  const { data } = await api.delete(`/sessions/${sessionId}/items/${itemId}`);
+  return data?.session || data;
+}
+export async function previewClose(sessionId, payload={}) {
+  const { data } = await api.post(`/sessions/${sessionId}/preview-close`, payload);
+  return data;
+}
+export async function checkout(sessionId, payload={}) {
+  const { data } = await api.post(`/sessions/${sessionId}/checkout`, payload);
+  return data?.bill || data;
+}
+
+// services/productService.js
+import api from "./api";
+export async function listProducts(params={}) {
+  const { data } = await api.get("/products", { params });
+  return data;
+}
+
+// services/billService.js
+import api from "./api";
+export async function getBill(id) {
+  const { data } = await api.get(`/bills/${id}`);
+  return data?.bill || data;
+}
+export function getBillPrintUrl(id) {
+  return `${api.defaults.baseURL}/bills/${id}/print`;
+}
+</code></pre>
+<hr data-start="7631" data-end="7634">
+<h1 data-start="7636" data-end="7680">5) Gắn service vào từng màn hình (screens)</h1>
+<h2 data-start="7682" data-end="7703">5.1 LoginScreen.js</h2>
+<pre class="overflow-visible!" data-start="7704" data-end="8930"><code>js// screens/LoginScreen.js
+import React, { useContext, useState } from "react";
+import { View, Text } from "react-native";
+import { AuthContext } from "../src/context/AuthContext";
+import CustomButton from "../src/components/CustomButton";
+import InputField from "../src/components/InputField";
+
+export default function LoginScreen() {
+  const { login } = useContext(AuthContext);
+  const [username, setU] = useState("");
+  const [password, setP] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const onSubmit = async () =&gt; {
+    try {
+      setLoading(true); setErr("");
+      await login({ username, password });
+    } catch (e) {
+      setErr("Đăng nhập thất bại. Kiểm tra tài khoản/mật khẩu.");
+    } finally { setLoading(false); }
+  };
+
+  return (
+    &lt;View style={{ padding: 16 }}&gt;
+      &lt;InputField value={username} onChangeText={setU} placeholder="Tài khoản" /&gt;
+      &lt;InputField value={password} onChangeText={setP} placeholder="Mật khẩu" secureTextEntry /&gt;
+      {!!err &amp;&amp; &lt;Text style={{ color: "red", marginVertical: 8 }}&gt;{err}&lt;/Text&gt;}
+      &lt;CustomButton title={loading ? "Đang đăng nhập..." : "Đăng nhập"} onPress={onSubmit} /&gt;
+    &lt;/View&gt;
+  );
+}
+</code></pre>
+<h2 data-start="8932" data-end="8977">5.2 TableListScreen.js (màn Home/lưới bàn)</h2>
+<pre class="overflow-visible!" data-start="8978" data-end="10126"><code>js// screens/TableListScreen.js
+import React, { useEffect, useState, useCallback } from "react";
+import { View, FlatList, RefreshControl } from "react-native";
+import { listTables } from "../../services/tableService";
+import TableCard from "../src/components/TableCard";
+
+export default function TableListScreen({ navigation }) {
+  const [tables, setTables] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () =&gt; {
+    setLoading(true);
+    try {
+      const res = await listTables({ limit: 100, sort: "-orderIndex" });
+      setTables(res?.data || []);
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() =&gt; { load(); }, [load]);
+
+  return (
+    &lt;View style={{ flex: 1, padding: 12 }}&gt;
+      &lt;FlatList
+        data={tables}
+        keyExtractor={(it) =&gt; it.id}
+        numColumns={2}
+        refreshControl={&lt;RefreshControl refreshing={loading} onRefresh={load} /&gt;}
+        renderItem={({ item }) =&gt; (
+          &lt;TableCard
+            table={item}
+            onPress={() =&gt; navigation.navigate("OrderScreen", { table: item })}
+          /&gt;
+        )}
+      /&gt;
+    &lt;/View&gt;
+  );
+}
+</code></pre>
+<p data-start="10128" data-end="10197"><code data-start="10128" data-end="10142">TableCard.js</code> nên hiển thị màu theo <code data-start="10165" data-end="10173">status</code> và thời gian đang chơi:</p>
+<ul data-start="10198" data-end="10327">
+<li data-start="10198" data-end="10269">
+<p data-start="10200" data-end="10269"><code data-start="10200" data-end="10232">item.currentSession?.startTime</code> → tính phút trôi (hiển thị “00:42”).</p>
+</li>
+<li data-start="10270" data-end="10327">
+<p data-start="10272" data-end="10327">Nếu <code data-start="10276" data-end="10298">status === 'playing'</code>, hiển thị badge “Đang chơi”.</p>
+</li>
+</ul>
+<h2 data-start="10329" data-end="10374">5.3 OrderScreen.js (phiên chơi + thêm món)</h2>
+<pre class="overflow-visible!" data-start="10375" data-end="12555"><code>js// screens/OrderScreen.js
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList } from "react-native";
+import { openSession, addItem, previewClose, checkout } from "../../services/sessionService";
+import { listProducts } from "../../services/productService";
+import CustomButton from "../src/components/CustomButton";
+
+export default function OrderScreen({ route, navigation }) {
+  const table = route.params?.table;
+  const [session, setSession] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() =&gt; {
+    (async () =&gt; {
+      if (table?.currentSession) {
+        // đã mở
+        setSession(table.currentSession);
+      } else {
+        const ses = await openSession({ tableId: table.id });
+        setSession(ses);
+      }
+      const p = await listProducts({ active: true, limit: 100 });
+      setProducts(p.data || []);
+    })();
+  }, [table]);
+
+  const handleAdd = async (product) =&gt; {
+    const s = await addItem(session.id, { productId: product.id, qty: 1 });
+    setSession(s);
+  };
+
+  const handlePreview = async () =&gt; {
+    const p = await previewClose(session.id, {});
+    setPreview(p);
+  };
+
+  const handleCheckout = async () =&gt; {
+    const bill = await checkout(session.id, { payment: { method: "cash" } });
+    navigation.navigate("OrderDetail", { billId: bill.id });
+  };
+
+  return (
+    &lt;View style={{ flex: 1, padding: 12 }}&gt;
+      &lt;Text style={{ fontWeight: "bold" }}&gt;{table.name}&lt;/Text&gt;
+      &lt;CustomButton title="Xem tạm tính" onPress={handlePreview} /&gt;
+      {preview &amp;&amp; (
+        &lt;Text&gt;
+          Tổng giờ: {preview.minutes.bill} phút • Tiền giờ: {preview.amounts.play} •
+          Dịch vụ: {preview.amounts.service} • Giảm: {preview.amounts.discount} •
+          Tổng: {preview.amounts.total}
+        &lt;/Text&gt;
+      )}
+
+      &lt;FlatList
+        data={products}
+        keyExtractor={(it) =&gt; it.id}
+        renderItem={({ item }) =&gt; (
+          &lt;CustomButton title={`+ ${item.name} (${item.price})`} onPress={() =&gt; handleAdd(item)} /&gt;
+        )}
+      /&gt;
+
+      &lt;CustomButton title="Thanh toán" onPress={handleCheckout} /&gt;
+    &lt;/View&gt;
+  );
+}
+</code></pre>
+<h2 data-start="12557" data-end="12597">5.4 OrderDetail.js (xem hóa đơn + in)</h2>
+<pre class="overflow-visible!" data-start="12598" data-end="13420"><code>js// screens/OrderDetail.js
+import React, { useEffect, useState } from "react";
+import { View, Text, Linking } from "react-native";
+import { getBill, getBillPrintUrl } from "../../services/billService";
+import CustomButton from "../src/components/CustomButton";
+
+export default function OrderDetail({ route }) {
+  const { billId } = route.params;
+  const [bill, setBill] = useState(null);
+
+  useEffect(() =&gt; { (async () =&gt; setBill(await getBill(billId)))(); }, [billId]);
+
+  if (!bill) return null;
+
+  return (
+    &lt;View style={{ padding: 12 }}&gt;
+      &lt;Text style={{ fontWeight: "bold" }}&gt;Hóa đơn {bill.code}&lt;/Text&gt;
+      &lt;Text&gt;Bàn: {bill.table?.name}&lt;/Text&gt;
+      &lt;Text&gt;Tổng: {bill.total}&lt;/Text&gt;
+      &lt;CustomButton title="In hóa đơn" onPress={() =&gt; Linking.openURL(getBillPrintUrl(billId))} /&gt;
+    &lt;/View&gt;
+  );
+}
+</code></pre>
+<hr data-start="13422" data-end="13425">
+<h1 data-start="13427" data-end="13457">6) Mapping nhanh Figma → API</h1>
+<ul data-start="13458" data-end="14076">
+<li data-start="13458" data-end="13598">
+<p data-start="13460" data-end="13598"><strong data-start="13460" data-end="13480">Home / TableList</strong> (Figma): dùng <code data-start="13495" data-end="13508">GET /tables</code>, hiển thị trạng thái màu + thời gian đang chơi (<code data-start="13557" data-end="13583">currentSession.startTime</code> → đếm phút).</p>
+</li>
+<li data-start="13599" data-end="13854">
+<p data-start="13601" data-end="13623"><strong data-start="13601" data-end="13620">Order / Session</strong>:</p>
+<ul data-start="13626" data-end="13854">
+<li data-start="13626" data-end="13676">
+<p data-start="13628" data-end="13676">Mở phiên: <code data-start="13638" data-end="13659">POST /sessions/open</code> (nếu chưa có).</p>
+</li>
+<li data-start="13679" data-end="13749">
+<p data-start="13681" data-end="13749">Danh sách món: <code data-start="13696" data-end="13711">GET /products</code> → thêm: <code data-start="13720" data-end="13746">POST /sessions/:id/items</code>.</p>
+</li>
+<li data-start="13752" data-end="13805">
+<p data-start="13754" data-end="13805">Xem tạm tính: <code data-start="13768" data-end="13802">POST /sessions/:id/preview-close</code>.</p>
+</li>
+<li data-start="13808" data-end="13854">
+<p data-start="13810" data-end="13854">Thanh toán: <code data-start="13822" data-end="13851">POST /sessions/:id/checkout</code>.</p>
+</li>
+</ul>
+</li>
+<li data-start="13855" data-end="13995">
+<p data-start="13857" data-end="13879"><strong data-start="13857" data-end="13876">Bill Management</strong>:</p>
+<ul data-start="13882" data-end="13995">
+<li data-start="13882" data-end="13931">
+<p data-start="13884" data-end="13931">Danh sách: <code data-start="13895" data-end="13907">GET /bills</code> (lọc ngày/hình thức).</p>
+</li>
+<li data-start="13934" data-end="13995">
+<p data-start="13936" data-end="13995">Chi tiết/print: <code data-start="13952" data-end="13968">GET /bills/:id</code>, <code data-start="13970" data-end="13992">GET /bills/:id/print</code>.</p>
+</li>
+</ul>
+</li>
+<li data-start="13996" data-end="14076">
+<p data-start="13998" data-end="14076"><strong data-start="13998" data-end="14009">Profile</strong>: <code data-start="14011" data-end="14025">GET /auth/me</code>, <code data-start="14027" data-end="14046">PUT /auth/profile</code>, <code data-start="14048" data-end="14075">PUT /auth/change-password</code>.</p>
+</li>
+</ul>
+<hr data-start="14078" data-end="14081">
+<h1 data-start="14083" data-end="14115">7) Lỗi thường gặp &amp; cách xử lý</h1>
+<ul data-start="14116" data-end="14563">
+<li data-start="14116" data-end="14260">
+<p data-start="14118" data-end="14260"><strong data-start="14118" data-end="14137">401 khi gọi API</strong>: kiểm tra <code data-start="14148" data-end="14165">services/api.js</code> interceptor refresh đã chạy; đúng đường dẫn <code data-start="14210" data-end="14225">/auth/refresh</code>; refreshToken có được lưu không.</p>
+</li>
+<li data-start="14261" data-end="14371">
+<p data-start="14263" data-end="14371"><strong data-start="14263" data-end="14309">Không nhận được dữ liệu trên thiết bị thật</strong>: Dùng <strong data-start="14316" data-end="14326">IP LAN</strong> thay cho <code data-start="14336" data-end="14347">localhost</code> trong <code data-start="14354" data-end="14368">API_BASE_URL</code>.</p>
+</li>
+<li data-start="14372" data-end="14450">
+<p data-start="14374" data-end="14450"><strong data-start="14374" data-end="14390">CORS blocked</strong>: thêm IP của máy/thiết bị vào <code data-start="14421" data-end="14435">CORS_ORIGINS</code> của backend.</p>
+</li>
+<li data-start="14451" data-end="14563">
+<p data-start="14453" data-end="14563"><strong data-start="14453" data-end="14469">Giờ chạy sai</strong>: thiết bị và server lệch timezone → fix ở client chỉ hiển thị, billing đã snapshot từ server.</p>
+</li>
+</ul>
+<hr data-start="14565" data-end="14568">
+<h1 data-start="14570" data-end="14598">8) Checklist tích hợp xong</h1>
+<ul data-start="14599" data-end="14956" class="contains-task-list">
+<li data-start="14599" data-end="14656" class="task-list-item">
+<p data-start="14605" data-end="14656"><input disabled="" type="checkbox"> Điền <code data-start="14610" data-end="14624">API_BASE_URL</code> đúng IP LAN trong <code data-start="14643" data-end="14653">app.json</code>.</p>
+</li>
+<li data-start="14657" data-end="14736" class="task-list-item">
+<p data-start="14663" data-end="14736"><input disabled="" type="checkbox"> Đăng nhập thành công, <code data-start="14685" data-end="14698">SecureStore</code> có <code data-start="14702" data-end="14733">accessToken/refreshToken/user</code>.</p>
+</li>
+<li class="task-list-item" data-start="14737" data-end="14791">
+<p data-start="14743" data-end="14791"><input disabled="" type="checkbox"> Home hiển thị lưới bàn; chọn 1 bàn → mở phiên.</p>
+</li>
+<li data-start="14792" data-end="14836" class="task-list-item">
+<p data-start="14798" data-end="14836"><input disabled="" type="checkbox"> Thêm đồ uống → tạm tính có thay đổi.</p>
+</li>
+<li data-start="14837" data-end="14900" class="task-list-item">
+<p data-start="14843" data-end="14900"><input disabled="" type="checkbox"> Checkout → điều hướng qua OrderDetail và in thành công.</p>
+</li>
+<li data-start="14901" data-end="14956" class="task-list-item">
+<p data-start="14907" data-end="14956"><input disabled="" type="checkbox"> Tắt/bật Wifi (để test retry) vẫn không crash app.</p>
+</li>
+</ul>
+<hr data-start="14958" data-end="14961">
+<p data-start="14963" data-end="15166" data-is-last-node="" data-is-only-node="">Nếu bạn muốn, mình có thể gom các đoạn code trên thành <strong data-start="15018" data-end="15027">patch</strong> đúng tên file trong cây thư mục của bạn (để copy nguyên xi), hoặc mở rộng thêm polling 1s để đồng hồ “đang chơi” chạy realtime theo Figma.</p></div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper right">
+            <div class="bubble user">
+              <div class="sender">You</div>
+              <div class="content">apiBilliard/.env</div>
+            </div>
+          </div>
+        
+          <div class="bubble-wrapper left">
+            <div class="bubble assistant">
+              <div class="sender">ChatGPT</div>
+              <div class="content"><p data-start="0" data-end="189">Dưới đây là file cấu hình <strong data-start="26" data-end="48"><code data-start="28" data-end="46">apiBilliard/.env</code></strong> mẫu mình soạn sẵn cho dự án của bạn. Copy nguyên nội dung vào <code data-start="111" data-end="117">.env</code> (hoặc <code data-start="124" data-end="142">.env.development</code>), sửa các dòng có ⚠️ theo máy của bạn là chạy.</p>
+<hr data-start="191" data-end="194">
+<h1 data-start="196" data-end="236">.env – Development (chạy trên máy dev)</h1>
+<pre class="overflow-visible!" data-start="238" data-end="2092"><code>ini# ====== CƠ BẢN ======
+NODE_ENV=development
+PORT=3000
+TZ=Asia/Ho_Chi_Minh
+
+# Địa chỉ public của API (dùng khi build URL tuyệt đối trong QR/print nếu không có req.host)
+APP_PUBLIC_BASE_URL=http://192.168.1.5:3000    # ⚠️ IP LAN của máy chạy backend
+
+# ====== MONGODB ======
+MONGODB_URI=mongodb://localhost:27017/billiard_dev   # ⚠️ sửa theo DB của bạn
+MONGOOSE_DEBUG=false
+DB_MAX_POOL_SIZE=20
+DB_CONNECT_TIMEOUT_MS=10000
+
+# ====== JWT / AUTH ======
+JWT_ACCESS_SECRET=dev_access_secret_change_me        # ⚠️ đổi chuỗi mạnh
+JWT_REFRESH_SECRET=dev_refresh_secret_change_me      # ⚠️ đổi chuỗi mạnh
+JWT_ACCESS_EXPIRES=15m
+JWT_REFRESH_EXPIRES=30d
+COOKIE_SECURE=false           # true nếu sau này chạy HTTPS và muốn set refresh-token qua cookie
+
+# ====== CORS (cho ứng dụng Expo / thiết bị thật) ======
+# Thêm tất cả origin bạn dùng khi dev (web, Expo devtools, IP thiết bị…)
+CORS_ORIGINS=http://localhost:19006,http://127.0.0.1:19006,exp://*,http://192.168.1.*:19006
+
+# ====== UPLOAD (multer) ======
+UPLOAD_DIR=public/uploads
+UPLOAD_MAX_FILE_SIZE_MB=5
+UPLOAD_MAX_FILES=10
+UPLOAD_ALLOW_SVG=false        # SVG có thể chứa script; để false cho an toàn
+
+# ====== LOGGING ======
+LOG_LEVEL=info                # trace | debug | info | warn | error | silent
+REQUEST_LOG=true              # log request/response cơ bản
+
+# ====== BACKUP (job mongodump) ======
+ENABLE_BACKUP_SCHEDULE=false  # true nếu muốn bật lịch backup trong app.js
+BACKUP_CRON=0 2 * * *         # 02:00 hằng ngày (ưu tiên dùng cái này nếu ENABLE_BACKUP_SCHEDULE=true)
+BACKUP_MAX_FILES=14           # giữ tối đa 14 file gần nhất (job sẽ xoá file cũ)
+# BACKUP_EXCLUDE_COLLECTIONS=sessions,auditlogs
+# BACKUP_READ_PREFERENCE=secondaryPreferred
+
+# ====== QR / IN HÓA ĐƠN / E-RECEIPT ======
+# Phần này chủ yếu cấu hình trong Settings (DB). Env này chỉ để fallback khi cần.
+QR_PUBLIC_DIR=public/qr
+</code></pre>
+<hr data-start="2094" data-end="2097">
+<h1 data-start="2099" data-end="2126">.env – Production (gợi ý)</h1>
+<pre class="overflow-visible!" data-start="2128" data-end="2983"><code>iniNODE_ENV=production
+PORT=3000
+TZ=Asia/Ho_Chi_Minh
+
+APP_PUBLIC_BASE_URL=https://your-domain.com        # ⚠️ domain thực tế (HTTPS)
+
+MONGODB_URI=mongodb://user:strongPass@db-host:27017/billiard_prod?authSource=admin  # ⚠️
+MONGOOSE_DEBUG=false
+DB_MAX_POOL_SIZE=50
+DB_CONNECT_TIMEOUT_MS=10000
+
+JWT_ACCESS_SECRET=prod_access_secret_ultra_random_64chars   # ⚠️
+JWT_REFRESH_SECRET=prod_refresh_secret_ultra_random_64chars # ⚠️
+JWT_ACCESS_EXPIRES=10m
+JWT_REFRESH_EXPIRES=30d
+COOKIE_SECURE=true
+
+# Prod nên whiltelist origin rõ ràng
+CORS_ORIGINS=https://app.your-domain.com,https://pos.your-domain.com
+
+UPLOAD_DIR=public/uploads
+UPLOAD_MAX_FILE_SIZE_MB=5
+UPLOAD_MAX_FILES=10
+UPLOAD_ALLOW_SVG=false
+
+LOG_LEVEL=info
+REQUEST_LOG=true
+
+ENABLE_BACKUP_SCHEDULE=true
+BACKUP_CRON=0 3 * * *             # 03:00 hằng ngày
+BACKUP_MAX_FILES=30
+
+QR_PUBLIC_DIR=public/qr
+</code></pre>
+<hr data-start="2985" data-end="2988">
+<h2 data-start="2990" data-end="3008">Cách dùng nhanh</h2>
+<ol data-start="3010" data-end="3173">
+<li data-start="3010" data-end="3154">
+<p data-start="3013" data-end="3154">Tạo file: <code data-start="3023" data-end="3041">apiBilliard/.env</code> với nội dung ở trên và <strong data-start="3065" data-end="3087">đổi các dòng có ⚠️</strong> (đặc biệt <code data-start="3098" data-end="3119">APP_PUBLIC_BASE_URL</code>, <code data-start="3121" data-end="3134">MONGODB_URI</code>, hai secret JWT).</p>
+</li>
+<li data-start="3155" data-end="3173">
+<p data-start="3158" data-end="3173">Cài &amp; chạy API:</p>
+</li>
+</ol>
+<pre class="overflow-visible!" data-start="3174" data-end="3241"><code>bashcd apiBilliard
+npm i
+npm run dev      # hoặc: npm start
+</code></pre>
+<ol start="3" data-start="3242" data-end="3397">
+<li data-start="3242" data-end="3382">
+<p data-start="3245" data-end="3382">Mở app Expo: sửa <code data-start="3262" data-end="3276">API_BASE_URL</code> trong <code data-start="3283" data-end="3293">app.json</code> của app lễ tân trỏ đến <code data-start="3317" data-end="3338">APP_PUBLIC_BASE_URL</code> ở trên (ví dụ <code data-start="3353" data-end="3378">http://192.168.1.5:3000</code>).</p>
+</li>
+<li data-start="3383" data-end="3397">
+<p data-start="3386" data-end="3397">Test nhanh:</p>
+</li>
+</ol>
+<ul data-start="3398" data-end="3548">
+<li data-start="3398" data-end="3460">
+<p data-start="3400" data-end="3460"><code data-start="3400" data-end="3443">GET http://192.168.1.5:3000/api/v1/health</code> → <code data-start="3446" data-end="3460">{ ok: true }</code></p>
+</li>
+<li data-start="3461" data-end="3548">
+<p data-start="3463" data-end="3548">Đăng nhập từ app (POST <code data-start="3486" data-end="3499">/auth/login</code>) → nhận token → gọi <code data-start="3520" data-end="3529">/tables</code> hiển thị lưới bàn.</p>
+</li>
+</ul>
+<blockquote data-start="3550" data-end="3732">
+<p data-start="3552" data-end="3732">Ghi chú: phần <strong data-start="3566" data-end="3578">Settings</strong> (shop, billing, e-receipt, print, backup…) được app quản trị ghi trong DB. Env ở trên không ghi đè Settings — chỉ phục vụ cho hạ tầng và một số fallback.</p>
+</blockquote>
+<p data-start="3734" data-end="3885" data-is-last-node="" data-is-only-node="">Nếu bạn muốn mình tạo luôn file <code data-start="3766" data-end="3772">.env</code> đúng IP LAN của bạn (và ẩn những mục không dùng), nói mình biết IP/URI và tên DB là mình soạn bản “cắm là chạy”.</p></div>
+            </div>
+          </div>
+        
+    </div>
+    
+    <div class="footer">
+      <div class="footer-content">
+        <img src="https://cdn.centrix.im/logo_centrix_new.svg" alt="CentriX" class="footer-logo">
+        <p>Generated by CentriX Chat Exporter • Monday 10 November 2025</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    

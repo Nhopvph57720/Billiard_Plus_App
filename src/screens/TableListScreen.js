@@ -1,54 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
- 
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from "../components/Header";
-import Menu from "../components/Menu";
-import { StatusBar } from 'expo-status-bar';
+import { listTables } from "../services/tableService";
 
 export default function TableListScreen({ navigation }) {
-  const [menuVisible, setMenuVisible] = useState(false);
-  // Dữ liệu mẫu cho các bàn bi-a (9 bàn)
-  const [tables, setTables] = useState([
-    { id: 1, status: 'occupied', timeUsed: '3 phút' },
-    { id: 2, status: 'available' },
-    { id: 3, status: 'available' },
-    { id: 4, status: 'occupied', timeUsed: '3 phút' },
-    { id: 5, status: 'available' },
-    { id: 6, status: 'available' },
-    { id: 7, status: 'available' },
-    { id: 8, status: 'available' },
-    { id: 9, status: 'available' },
-  ]);
-
+  const [tables, setTables] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedArea, setSelectedArea] = useState(1);
 
+  // Fetch data từ API
+  const loadTables = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await listTables({ limit: 100, sort: "-orderIndex" });
+      console.log('API Response:', res);
+      
+      if (res?.success && res?.data) {
+        setTables(res.data);
+      } else if (Array.isArray(res?.data)) {
+        setTables(res.data);
+      } else {
+        setTables([]);
+      }
+    } catch (error) {
+      console.error('Error loading tables:', error);
+      // Fallback data nếu API lỗi
+      setTables([
+        { _id: '1', name: 'Bàn 1', status: 'occupied', currentSession: { startTime: new Date(Date.now() - 30*60*1000) } },
+        { _id: '2', name: 'Bàn 2', status: 'available' },
+        { _id: '3', name: 'Bàn 3', status: 'available' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTables();
+  }, [loadTables]);
+
+  // Tính thời gian đã chơi
+  const calculateTimeUsed = (startTime) => {
+    if (!startTime) return '';
+    const now = new Date();
+    const start = new Date(startTime);
+    const diffInMinutes = Math.floor((now - start) / (1000 * 60));
+    return `${diffInMinutes} phút`;
+  };
+
+  // Map data từ API về format cũ
+  const mappedTables = tables.map(table => ({
+    id: table._id || table.id,
+    status: table.status === 'playing' ? 'occupied' : table.status, // Map 'playing' về 'occupied'
+    timeUsed: table.status === 'playing' ? calculateTimeUsed(table.currentSession?.startTime) : null,
+    name: table.name
+  }));
+
   // Tính toán thống kê
-  const totalTables = tables.length;
-  const occupiedTables = tables.filter(table => table.status === 'occupied').length;
+  const totalTables = mappedTables.length;
+  const occupiedTables = mappedTables.filter(table => table.status === 'occupied').length;
   const availableTables = totalTables - occupiedTables;
-  const totalOrders = occupiedTables; // Giả sử mỗi bàn đang sử dụng = 1 đơn
+  const totalOrders = occupiedTables;
 
   const handleTablePress = (table) => {
     if (table.status === 'available') {
-      // Điều hướng đến màn hình đặt món
-      console.log(`Bàn ${table.id} được chọn để đặt`);
+      console.log(`Bàn ${table.name || table.id} được chọn để đặt`);
       navigation.navigate('OrderScreen', { 
         tableId: table.id,
-        tableName: `Bàn ${table.id}` 
+        tableName: table.name || `Bàn ${table.id}`
       });
     } else {
-      // Hiển thị thông tin bàn đang sử dụng hoặc chuyển đến OrderScreen để xem/thêm món
-      console.log(`Bàn ${table.id} đang được sử dụng - chuyển đến OrderScreen`);
+      console.log(`Bàn ${table.name || table.id} đang được sử dụng - chuyển đến OrderScreen`);
       navigation.navigate('OrderScreen', { 
         tableId: table.id,
-        tableName: `Bàn ${table.id}`,
+        tableName: table.name || `Bàn ${table.id}`,
         isOccupied: true,
         timeUsed: table.timeUsed
       });
@@ -72,11 +104,11 @@ export default function TableListScreen({ navigation }) {
             styles.tableNumber,
             isOccupied ? styles.occupiedText : styles.availableText
           ]}>
-            {item.id}
+            {item.name ? item.name.replace('Bàn ', '') : item.id}
           </Text>
           
           {isOccupied ? (
-            <Text style={styles.timeText}>{item.timeUsed}</Text>
+            <Text style={styles.timeText}>{item.timeUsed || '0 phút'}</Text>
           ) : (
             <Text style={styles.statusText}>Bàn trống</Text>
           )}
@@ -85,23 +117,20 @@ export default function TableListScreen({ navigation }) {
     );
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+        <View style={styles.loadingContainer}>
+          <Text>Đang tải dữ liệu...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar 
-        barStyle="dark-content" 
-        backgroundColor="#fff"  // Match with header background
-      />
-      
-      <Header 
-        onMenuPress={() => setMenuVisible(true)}
-        onNotificationPress={() => navigation.navigate('Notifications')}
-      />
-      
-      <Menu 
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        navigation={navigation}
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
 
       {/* Phần thống kê */}
       <View style={styles.statsContainer}>
@@ -137,9 +166,9 @@ export default function TableListScreen({ navigation }) {
         {/* Khu vực hiển thị bàn */}
         <View style={styles.tableArea}>
           <FlatList
-            data={tables}
+            data={mappedTables}
             renderItem={renderTableItem}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.id?.toString()}
             numColumns={3}
             contentContainerStyle={styles.tableGrid}
             columnWrapperStyle={styles.row}
@@ -155,6 +184,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#e8e6f0',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -224,8 +258,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   row: {
-    justifyContent: 'space-around',
+    justifyContent: 'flex-start', // Thay đổi từ 'space-around' thành 'flex-start'
     marginBottom: 15,
+    paddingHorizontal: 10, // Thêm padding để tạo khoảng cách đều
   },
   tableCard: {
     width: '30%',
@@ -236,7 +271,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    marginHorizontal: 5,
+    marginHorizontal: 5, // Giữ marginHorizontal để tạo khoảng cách giữa các bàn
   },
   availableCard: {
     backgroundColor: '#fff',
