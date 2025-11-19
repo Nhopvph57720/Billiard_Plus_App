@@ -24,7 +24,7 @@ export default function HomeScreen({ navigation }) {
   ]);
 
   const handleAddTable = () => {
-   navigation.navigate("OrderScreen");
+    navigation.navigate("OrderScreen");
   };
 
   return (
@@ -43,7 +43,11 @@ export default function HomeScreen({ navigation }) {
       {/* Danh sách bàn */}
       <ScrollView style={styles.tableList}>
         {tables.map((table) => (
-          <View key={table.id} style={styles.tableCard}>
+          <TouchableOpacity
+            key={table.id}
+            style={styles.tableCard}
+            onPress={() => navigation.navigate("OrderDetail", { table })}
+          >
             <View style={styles.tableHeader}>
               <View style={styles.tableIconContainer}>
                 <Ionicons name="bookmark" size={24} color="#0099ff" />
@@ -52,6 +56,7 @@ export default function HomeScreen({ navigation }) {
                 <Text style={styles.tableStatus}>{table.status}</Text>
               </View>
             </View>
+
             <View style={styles.tableBody}>
               <Text style={styles.tableName}>{table.name}</Text>
               <View style={styles.tableDetails}>
@@ -65,7 +70,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 
