@@ -104,7 +104,7 @@ export default function OrderScreen({ navigation, route }) {
     try {
       console.log('🔓 Creating new session for table:', tableId);
       console.log('🔍 Current params state:', { tableId, tableName, ratePerHour, sessionId });
-      
+
       if (!tableId) {
         console.error('❌ No tableId available. Route params:', route.params);
         Alert.alert('Lỗi', 'Không tìm thấy thông tin bàn. Vui lòng quay lại và chọn bàn lại.');
@@ -120,10 +120,10 @@ export default function OrderScreen({ navigation, route }) {
 
       console.log('📤 Creating session with data:', sessionData);
       const sessionResponse = await sessionService.open(sessionData);
-      
+
       // Backend trả về { data: session, message, status }
       const newSession = sessionResponse.data;
-      
+
       console.log('✅ New session created:', newSession);
       setCurrentSession(newSession);
 
@@ -137,9 +137,9 @@ export default function OrderScreen({ navigation, route }) {
       console.log('📤 Adding first item:', itemData);
       const addResponse = await sessionService.addItem(newSession._id || newSession.id, itemData);
       const updatedSession = addResponse.data;
-      
+
       setCurrentSession(updatedSession);
-      
+
       Alert.alert(
         '🎉 Bắt đầu phiên chơi!',
         `Đã mở phiên cho ${tableName} và thêm "${product.name}"`,
@@ -149,7 +149,7 @@ export default function OrderScreen({ navigation, route }) {
     } catch (error) {
       console.error('❌ Error creating session or adding item:', error);
       console.error('❌ Error details:', error.response?.data);
-      
+
       let errorMessage = 'Không thể tạo phiên chơi';
       if (error.response?.status === 400) {
         errorMessage = error.response.data?.message || 'Dữ liệu không hợp lệ';
@@ -160,7 +160,7 @@ export default function OrderScreen({ navigation, route }) {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       Alert.alert('Lỗi', errorMessage);
     }
   }, [tableId, tableName, route.params]);
@@ -168,7 +168,7 @@ export default function OrderScreen({ navigation, route }) {
   // Thêm item vào session hiện có hoặc tạo session mới
   const handleAddItem = useCallback(async (product) => {
     const productId = product._id || product.id;
-    
+
     try {
       setAddingItem(productId);
       console.log('➕ Adding product:', product.name);
@@ -180,7 +180,7 @@ export default function OrderScreen({ navigation, route }) {
       } else {
         // Thêm vào session hiện có
         console.log('🔄 Adding to existing session...');
-        
+
         const itemData = {
           productId: productId,
           qty: 1,
@@ -189,7 +189,7 @@ export default function OrderScreen({ navigation, route }) {
 
         const sessionIdToUse = currentSession._id || currentSession.id;
         const response = await sessionService.addItem(sessionIdToUse, itemData);
-        
+
         // Backend trả về { data: session, message, status }
         setCurrentSession(response.data);
 
@@ -201,17 +201,17 @@ export default function OrderScreen({ navigation, route }) {
 
         console.log('✅ Item added to existing session');
       }
-      
+
     } catch (error) {
       console.error('❌ Error adding item:', error);
-      
+
       let errorMessage = 'Không thể thêm sản phẩm';
       if (error.response?.status === 400) {
         errorMessage = error.response.data?.message || 'Sản phẩm không khả dụng';
       } else if (error.response?.status === 409) {
         errorMessage = 'Phiên đã đóng, không thể thêm món';
       }
-      
+
       Alert.alert('Lỗi', errorMessage);
     } finally {
       setAddingItem(null);
@@ -256,7 +256,7 @@ export default function OrderScreen({ navigation, route }) {
     if (!currentSession?.items || currentSession.items.length === 0) {
       return 0;
     }
-    
+
     return currentSession.items.reduce((total, item) => {
       const price = Number(item.priceSnapshot || 0);
       const qty = Number(item.qty || 0);
@@ -269,7 +269,7 @@ export default function OrderScreen({ navigation, route }) {
     if (!currentSession?.items || currentSession.items.length === 0) {
       return 0;
     }
-    
+
     return currentSession.items.reduce((total, item) => {
       return total + Number(item.qty || 0);
     }, 0);
@@ -279,7 +279,7 @@ export default function OrderScreen({ navigation, route }) {
   const handleContinue = useCallback(() => {
     if (currentSession) {
       // Chuyển đến OrderDetail với đầy đủ params
-      navigation.navigate('OrderDetail', { 
+      navigation.navigate('OrderDetail', {
         sessionId: currentSession._id || currentSession.id,
         tableName: tableName,
         tableId: tableId,
@@ -294,11 +294,17 @@ export default function OrderScreen({ navigation, route }) {
   const renderProductItem = (item) => {
     const productId = item._id || item.id;
     const isAdding = addingItem === productId;
-
+     console.log('ITEM >>>', JSON.stringify(item, null, 2));
+  console.log('IMAGES FIELD >>>', item.images);
+    const imageUrl = getProductImageUrl(item);
     return (
       <View key={productId} style={styles.itemCard}>
-        <Image 
-          source={{ uri: item.images?.[0] || "https://via.placeholder.com/150" }}
+        <Image
+          source={{
+            uri:
+              imageUrl ||
+              'https://via.placeholder.com/300x200.png?text=No+Image',
+          }}
           style={styles.itemImage}
         />
 
@@ -309,8 +315,8 @@ export default function OrderScreen({ navigation, route }) {
             {item.unit && <Text style={styles.itemUnit}>/{item.unit}</Text>}
           </Text>
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[
             styles.buyButton,
             isAdding && styles.buyButtonDisabled
@@ -373,13 +379,13 @@ export default function OrderScreen({ navigation, route }) {
 
       {/* Header với thông tin bàn và session */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        
+
         <View style={styles.tableInfo}>
           <Text style={styles.tableTitle}>{tableName || 'Đặt món'}</Text>
           {currentSession && (
@@ -393,13 +399,13 @@ export default function OrderScreen({ navigation, route }) {
             </Text>
           )}
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.cartButton}
           onPress={() => {
             if (currentSession) {
               // Chuyển đến màn hình chi tiết đơn hàng
-              navigation.navigate('OrderDetail', { 
+              navigation.navigate('OrderDetail', {
                 sessionId: currentSession._id || currentSession.id,
                 tableName: tableName,
                 tableId: tableId
