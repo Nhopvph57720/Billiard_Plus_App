@@ -7,13 +7,14 @@ import {
   FlatList,
   StatusBar,
   RefreshControl,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { tableService } from "../services/tableService";
 import { listAreas } from "../services/areaService";
 import { sessionService } from "../services/sessionService";
 import Header from "../components/Header";
-import Menu from "../components/Menu"; // ✅ THÊM: Import Menu component
+import Menu from "../components/Menu";
 
 export default function TableListScreen({ navigation }) {
   const [tables, setTables] = useState([]);
@@ -24,17 +25,16 @@ export default function TableListScreen({ navigation }) {
   const [sessions, setSessions] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [realTimeData, setRealTimeData] = useState({});
-  const [menuVisible, setMenuVisible] = useState(false); // ✅ THÊM: State cho menu
+  const [menuVisible, setMenuVisible] = useState(false);
 
-  // ✅ SỬA: Handle menu và notification giống HomeScreen
   const handleMenuPress = () => {
     console.log('Menu pressed');
-    setMenuVisible(true); // ✅ Show menu thay vì drawer
+    setMenuVisible(true);
   };
 
   const handleNotificationPress = () => {
     console.log('Notification pressed');
-    navigation.navigate('Notifications'); // ✅ Navigate đến screen đúng
+    navigation.navigate('Notifications');
   };
 
   const loadAreas = useCallback(async () => {
@@ -150,7 +150,6 @@ export default function TableListScreen({ navigation }) {
   useEffect(() => {
     loadData();
     
-    // Auto refresh data every 30 seconds
     const dataInterval = setInterval(() => {
       loadTables();
       loadSessions();
@@ -160,7 +159,6 @@ export default function TableListScreen({ navigation }) {
   }, [loadData, loadTables, loadSessions]);
 
   useEffect(() => {
-    // Update time every second
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
       updateRealTimeData();
@@ -170,7 +168,6 @@ export default function TableListScreen({ navigation }) {
   }, [updateRealTimeData]);
 
   useEffect(() => {
-    // Update real-time data when sessions or tables change
     if (tables.length > 0 && sessions.length > 0) {
       updateRealTimeData();
     }
@@ -235,13 +232,21 @@ export default function TableListScreen({ navigation }) {
         ratePerHour: table.ratePerHour
       });
     } else if (table.status === 'playing') {
-      navigation.navigate('OrderDetail', { 
+      navigation.navigate('OrderScreen', { 
         tableId: table.id,
         tableName: table.name,
+        ratePerHour: table.ratePerHour,
         sessionId: table.sessionId,
         timeUsed: table.timeUsed,
         itemsCount: table.itemsCount
       });
+    } else if (table.status === 'reserved' || table.status === 'maintenance') {
+      Alert.alert(
+        'Thông báo', 
+        table.status === 'reserved' 
+          ? 'Bàn này đã được đặt trước' 
+          : 'Bàn này đang bảo trì'
+      );
     }
   };
 
@@ -320,11 +325,7 @@ export default function TableListScreen({ navigation }) {
             {statusText}
           </Text>
 
-          {item.itemsCount > 0 && (
-            <View style={styles.itemsBadge}>
-              <Text style={styles.itemsBadgeText}>{item.itemsCount}</Text>
-            </View>
-          )}
+          {/* ✅ ĐÃ BỎ: Badge hiển thị số lượng món */}
         </View>
       </TouchableOpacity>
     );
@@ -335,7 +336,6 @@ export default function TableListScreen({ navigation }) {
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
         
-        {/* ✅ SỬA: Header + Menu giống HomeScreen */}
         <Header 
           onMenuPress={handleMenuPress}
           onNotificationPress={handleNotificationPress}
@@ -358,7 +358,6 @@ export default function TableListScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
       
-      {/* ✅ SỬA: Header + Menu giống HomeScreen */}
       <Header 
         onMenuPress={handleMenuPress}
         onNotificationPress={handleNotificationPress}
@@ -442,11 +441,10 @@ export default function TableListScreen({ navigation }) {
   );
 }
 
-// ✅ SỬA: Thay SafeAreaView thành View để giống HomeScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#e8e6f0', // ✅ Hoặc đổi thành '#f5f5f5' như HomeScreen
+    backgroundColor: '#e8e6f0',
   },
   loadingContainer: {
     flex: 1,
@@ -607,21 +605,5 @@ const styles = StyleSheet.create({
   },
   whiteText: {
     color: '#fff',
-  },
-  itemsBadge: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  itemsBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
   },
 });

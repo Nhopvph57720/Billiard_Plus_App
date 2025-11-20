@@ -28,11 +28,22 @@ export const sessionService = {
     }
   },
 
-  // Mở phiên (check-in)
+  // Mở phiên (check-in) - SỬA LẠI THEO BACKEND
   open: async (data) => {
     try {
       console.log('🔓 [Session] Opening session with data:', data);
-      const response = await api.post('/sessions', data);
+      
+      // Format lại data theo backend yêu cầu
+      const payload = {
+        tableId: data.tableId,
+        startAt: data.startTime || data.startAt,  // Backend dùng 'startAt'
+        note: data.note || ''
+      };
+      
+      console.log('📤 [Session] Sending payload:', payload);
+      
+      // Endpoint đúng là '/sessions'
+      const response = await api.post('/sessions', payload);
       console.log('✅ [Session] Open success:', response.data);
       return response.data;
     } catch (error) {
@@ -85,10 +96,11 @@ export const sessionService = {
     }
   },
 
-  // Cập nhật số lượng item
+  // Cập nhật số lượng item - SỬA LẠI VỀ PATCH
   updateItemQty: async (sessionId, itemId, data) => {
     try {
       console.log('✏️ [Session] Updating item qty:', sessionId, itemId, data);
+      // Đổi lại từ 'put' về 'patch' theo backend
       const response = await api.patch(`/sessions/${sessionId}/items/${itemId}`, data);
       console.log('✅ [Session] Update item success:', response.data);
       return response.data;
