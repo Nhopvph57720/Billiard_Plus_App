@@ -1,3 +1,4 @@
+
 import api from "./api";
 import { ENDPOINTS } from "../constants/config";
 
@@ -35,3 +36,4 @@ export default {
   getBills,
   getBillDetail,
 };
+
