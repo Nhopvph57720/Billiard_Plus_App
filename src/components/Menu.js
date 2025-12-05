@@ -1,31 +1,68 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  Dimensions,
+  TouchableWithoutFeedback,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 const menuItems = [
-  { id: 1, title: "Quản lý quán", icon: "restaurant", route: "Restaurant" },
+  { id: 1, title: "Quản lý câu lạc bộ", icon: "people", route: "Management" },
   { id: 2, title: "Quản lý hóa đơn", icon: "receipt", route: "Bills" },
-  { id: 3, title: "Hóa đơn điện tử", icon: "document-text", route: "EBills" },
-  { id: 4, title: "Quản lý thu chi", icon: "cash", route: "Finance" },
-  { id: 5, title: "Phiếu chi", icon: "document", route: "Expenses" },
-  { id: 6, title: "Công nợ khách hàng", icon: "people", route: "Debts" },
   { id: 7, title: "Thiết lập ", icon: "settings", route: "Settings" },
   { id: 8, title: "Đăng xuất", icon: "log-out", route: "Logout" },
 ];
 
 export default function Menu({ visible, onClose, navigation }) {
+  const screenWidth = Dimensions.get('window').width;
+  const menuWidth = screenWidth * 0.8;
+  const translateX = useRef(new Animated.Value(-menuWidth)).current;
+  const [showModal, setShowModal] = useState(visible);
+
+  useEffect(() => {
+    if (visible) {
+      // open: show modal then slide in
+      setShowModal(true);
+      Animated.timing(translateX, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+    } else if (showModal) {
+      // close: slide out then hide modal
+      Animated.timing(translateX, {
+        toValue: -menuWidth,
+        duration: 180,
+        useNativeDriver: true,
+      }).start(() => setShowModal(false));
+    }
+  }, [visible]);
+
+  const handleClose = () => {
+    Animated.timing(translateX, {
+      toValue: -menuWidth,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowModal(false);
+      onClose && onClose();
+    });
+  };
+
   return (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
+    <Modal transparent={true} visible={showModal} onRequestClose={handleClose}>
       <View style={styles.modalOverlay}>
-        <View style={styles.menuContainer}>
+        <Animated.View
+          style={[styles.menuContainer, { width: menuWidth, transform: [{ translateX }] }]}
+        >
           <View style={styles.menuHeader}>
             <Text style={styles.menuTitle}>Menu</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
@@ -42,20 +79,26 @@ export default function Menu({ visible, onClose, navigation }) {
                     routes: [{ name: "LoginScreen" }],
                   });
 
-                  onClose();
+                  handleClose();
                   return;
                 }
 
                 // 👉 Mặc định: điều hướng đến màn hình khác
                 navigation.navigate(item.route);
-                onClose();
+                // animate out then inform parent
+                handleClose();
               }}
             >
               <Ionicons name={item.icon} size={24} color="#666" />
               <Text style={styles.menuItemText}>{item.title}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </Animated.View>
+
+        {/* clickable overlay on the right (tap to close) */}
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={styles.overlayRight} />
+        </TouchableWithoutFeedback>
       </View>
     </Modal>
   );
@@ -65,12 +108,16 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
+    flexDirection: 'row',
   },
   menuContainer: {
     width: "80%",
     height: "100%",
     backgroundColor: "#fff",
     padding: 20,
+  },
+  overlayRight: {
+    flex: 1,
   },
   menuHeader: {
     flexDirection: "row",

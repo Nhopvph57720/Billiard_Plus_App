@@ -11,11 +11,13 @@ import {
   Image,
   ToastAndroid,
   Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { sessionService } from '../services/sessionService';
-import { tableService } from '../services/tableService'; // Add import
-import { listAreas } from '../services/areaService'; // Add import
+import { tableService } from '../services/tableService';
+import { listAreas } from '../services/areaService';
 import { CONFIG } from '../constants/config';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api'; // Import api để fetch products
@@ -27,10 +29,10 @@ function getProductImageUrl(product) {
   if (!product || !product.images || !Array.isArray(product.images) || product.images.length === 0) {
     return null;
   }
-  
+
   const imagePath = product.images[0];
   if (!imagePath) return null;
-  
+
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   } else if (imagePath.startsWith('/')) {
@@ -55,16 +57,38 @@ const showToast = (message, type = 'success') => {
 
 export default function OrderDetail({ navigation, route }) {
   const [selectedTab, setSelectedTab] = useState('promotion');
-  const [area, setArea] = useState('Đang tải...'); // Change initial state
+  const [area, setArea] = useState('Đang tải...');
   const [showMenu, setShowMenu] = useState(false);
   const [sessionData, setSessionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [playingTime, setPlayingTime] = useState(0);
-  const [productsData, setProductsData] = useState({}); // Cache products data
-  const [saving, setSaving] = useState(false); // Thêm state cho loading save
+  const [productsData, setProductsData] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  // Thêm states cho dialog hủy đơn
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [otherReason, setOtherReason] = useState('');
+
+  // Thêm states cho quantity operations
+  const [updatingQuantity, setUpdatingQuantity] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
+  // THÊM STATE MỚI ĐỂ TRACK THAY ĐỔI LOCAL
+  const [localQuantityChanges, setLocalQuantityChanges] = useState({}); // { itemId: newQty }
+  const [deletedItems, setDeletedItems] = useState(new Set()); // Set của các itemId đã xóa
 
   // Lấy params từ navigation
   const { sessionId, tableName, tableId, ratePerHour } = route?.params || {};
+
+  // Danh sách lý do hủy đơn
+  const cancelReasons = [
+    'Đổi trả lại',
+    'Thêm nhầm đơn hàng',
+    'Khách báo hủy',
+    'Lý do khác'
+  ];
 
   // Load area information for the table
   const loadAreaInfo = useCallback(async () => {
@@ -73,18 +97,18 @@ export default function OrderDetail({ navigation, route }) {
         // Get table details
         const tableResponse = await tableService.getById(tableId);
         const table = tableResponse.data || tableResponse;
-        
+
         if (table.areaId) {
           // Get areas list to find the area name
           const areasResponse = await listAreas();
           const areas = areasResponse.data?.data || areasResponse.data || areasResponse;
-          
+
           const tableArea = areas.find(area => {
             const areaId = area._id || area.id;
             const tableAreaId = table.areaId._id || table.areaId.id || table.areaId;
             return String(areaId) === String(tableAreaId);
           });
-          
+
           if (tableArea) {
             setArea(tableArea.name);
           } else {
@@ -106,14 +130,14 @@ export default function OrderDetail({ navigation, route }) {
       setLoading(true);
       const response = await sessionService.getById(sessionId);
       const session = response.data || response;
-      
+
       console.log('📋 Session loaded, product IDs:', session.items?.map(item => ({
         id: item.product,
         name: item.nameSnapshot
       })));
-      
+
       setSessionData(session);
-      
+
       // Tính thời gian chơi hiện tại
       if (session.startTime) {
         const startTime = new Date(session.startTime);
@@ -132,31 +156,226 @@ export default function OrderDetail({ navigation, route }) {
   // Function handleSave - LƯU SESSION VÀ CHUYỂN VỀ TABLE LIST (với Toast)
   const handleSave = useCallback(async () => {
     try {
-      console.log('💾 Saving session data...');
+      console.log('💾 Đang lưu tất cả thay đổi...');
       setSaving(true);
-      
-      // Lưu thông tin session (refresh data để đồng bộ)
+
+      // 1. Áp dụng tất cả thay đổi số lượng
+      const quantityPromises = Object.entries(localQuantityChanges).map(async ([itemId, newQty]) => {
+        try {
+          console.log(`📝 Cập nhật số lượng item ${itemId} thành ${newQty}`);
+          await sessionService.updateItemQty(sessionId, itemId, { qty: newQty });
+        } catch (error) {
+          console.error(`❌ Lỗi cập nhật số lượng item ${itemId}:`, error);
+          throw error;
+        }
+      });
+
+      // 2. Xóa tất cả items đã đánh dấu xóa
+      const deletePromises = Array.from(deletedItems).map(async (itemId) => {
+        try {
+          console.log(`🗑️ Xóa item ${itemId}`);
+          await sessionService.removeItem(sessionId, itemId);
+        } catch (error) {
+          console.error(`❌ Lỗi xóa item ${itemId}:`, error);
+          throw error;
+        }
+      });
+
+      // 3. Thực hiện tất cả thay đổi song song
+      await Promise.all([...quantityPromises, ...deletePromises]);
+
+      // 4. Reset local changes
+      setLocalQuantityChanges({});
+      setDeletedItems(new Set());
+
+      // 5. Reload session data để đồng bộ
       await loadSessionData();
-      
-      console.log('✅ Session saved successfully');
-      
-      // Hiển thị toast thành công
+
+      console.log('✅ Lưu tất cả thay đổi thành công');
       showToast('Lưu thành công');
-      
-      // Chuyển màn hình ngay lập tức
-      console.log('🔄 Navigating back to Main Tab...');
+
+      // 6. Chuyển màn hình
       navigation.navigate('Main', {
         screen: 'Table',
         params: { refreshData: true }
       });
-      
+
     } catch (error) {
-      console.error('❌ Error saving session:', error);
+      console.error('❌ Lỗi khi lưu:', error);
       showToast('❌ Không thể lưu thông tin. Vui lòng thử lại.', 'error');
     } finally {
       setSaving(false);
     }
-  }, [loadSessionData, navigation]);
+  }, [sessionId, localQuantityChanges, deletedItems, loadSessionData, navigation]);
+
+  // Function handlePayment - CHUYỂN SANG THANH TOÁN (không dùng API checkout)
+  const handlePayment = useCallback(async () => {
+    try {
+      console.log('💳 Navigating to payment screen...');
+
+      // Chuyển sang màn thanh toán với thông tin session
+      navigation.navigate('ThanhToan', {
+        sessionId: sessionId,
+        tableName: tableName,
+        tableId: tableId,
+        totalAmount: getTotalAmount(),
+        playingTime: playingTime,
+        ratePerHour: ratePerHour || sessionData?.pricingSnapshot?.ratePerHour || 40000,
+        sessionData: sessionData
+      });
+
+    } catch (error) {
+      console.error('❌ Error navigating to payment:', error);
+      showToast('❌ Không thể chuyển đến màn thanh toán', 'error');
+    }
+  }, [sessionId, tableName, tableId, getTotalAmount, playingTime, ratePerHour, sessionData, navigation]);
+
+  // Function handleMenuAction - XỬ LÝ CÁC ACTION TRONG MENU
+  const handleMenuAction = useCallback(async (action) => {
+    setShowMenu(false); // Đóng menu trước
+
+    switch (action) {
+      case 'Yêu cầu thanh toán':
+        await handleCheckoutPayment();
+        break;
+      case 'Hủy đơn':
+        setShowCancelDialog(true);
+        break;
+      default:
+        showToast('Chức năng đang phát triển', 'info');
+        break;
+    }
+  }, []);
+
+  // Function handleCheckoutPayment - SỬ DỤNG API CHECKOUT VÀ CHUYỂN TỚI PAYMENT SCREEN
+  const handleCheckoutPayment = useCallback(async () => {
+    try {
+      console.log('💳 Creating bill via checkout API...');
+
+      if (!sessionId) {
+        showToast('❌ Không tìm thấy thông tin phiên chơi', 'error');
+        return;
+      }
+
+      // Hiển thị loading
+      setSaving(true);
+
+      // Gọi API checkout để tạo bill và đóng session
+      const checkoutResponse = await sessionService.checkout(sessionId, {
+        endAt: new Date(),
+        paymentMethod: 'cash', // Mặc định tiền mặt
+        paid: false, // Chưa thanh toán, chỉ tạo bill
+        note: 'Yêu cầu thanh toán từ menu'
+      });
+
+      console.log('✅ Bill created via checkout:', checkoutResponse);
+
+      showToast('✅ Tạo hóa đơn thành công');
+
+      // Chuyển tới Main tab với Payment screen
+      navigation.navigate('Main', {
+        screen: 'Payment',
+        params: { refreshData: true }
+      });
+
+    } catch (error) {
+      console.error('❌ Error creating bill via checkout:', error);
+
+      let errorMessage = 'Không thể tạo hóa đơn';
+      if (error.response?.status === 400) {
+        errorMessage = 'Phiên chơi không hợp lệ';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Không tìm thấy phiên chơi';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      showToast(`❌ ${errorMessage}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [sessionId, navigation]);
+
+  // Hàm tăng số lượng sản phẩm
+  const handleIncreaseQuantity = useCallback(async (item) => {
+    if (!item.sessionItemId) {
+      console.error('❌ Không tìm thấy ID item trong session');
+      showToast('❌ Không thể cập nhật số lượng', 'error');
+      return;
+    }
+
+    console.log('⬆️ Tăng số lượng local cho item:', item.sessionItemId);
+    
+    // Tính số lượng hiện tại (có thể đã thay đổi local)
+    const currentQty = localQuantityChanges[item.sessionItemId] ?? item.quantity;
+    const newQty = currentQty + 1;
+    
+    // Cập nhật local state
+    setLocalQuantityChanges(prev => ({
+      ...prev,
+      [item.sessionItemId]: newQty
+    }));
+
+    // Bỏ toast
+  }, [localQuantityChanges]);
+
+  // Hàm giảm số lượng sản phẩm
+  const handleDecreaseQuantity = useCallback(async (item) => {
+    if (!item.sessionItemId) {
+      console.error('❌ Không tìm thấy ID item trong session');
+      showToast('❌ Không thể cập nhật số lượng', 'error');
+      return;
+    }
+
+    // Tính số lượng hiện tại (có thể đã thay đổi local)
+    const currentQty = localQuantityChanges[item.sessionItemId] ?? item.quantity;
+    
+    // Nếu số lượng = 1, hiển thị dialog xác nhận xóa
+    if (currentQty <= 1) {
+      setItemToDelete(item);
+      setShowDeleteDialog(true);
+      return;
+    }
+
+    console.log('⬇️ Giảm số lượng local cho item:', item.sessionItemId);
+    
+    const newQty = currentQty - 1;
+    
+    // Cập nhật local state
+    setLocalQuantityChanges(prev => ({
+      ...prev,
+      [item.sessionItemId]: newQty
+    }));
+
+    // Bỏ toast
+  }, [localQuantityChanges]);
+
+  // Hàm xóa sản phẩm
+  const handleDeleteItem = useCallback(async (item) => {
+    if (!item.sessionItemId) {
+      console.error('❌ Không tìm thấy ID item trong session');
+      showToast('❌ Không thể xóa sản phẩm', 'error');
+      return;
+    }
+
+    console.log('🗑️ Đánh dấu xóa local item:', item.sessionItemId);
+
+    // Thêm vào danh sách xóa
+    setDeletedItems(prev => new Set([...prev, item.sessionItemId]));
+    
+    // Xóa khỏi quantity changes nếu có
+    setLocalQuantityChanges(prev => {
+      const newChanges = { ...prev };
+      delete newChanges[item.sessionItemId];
+      return newChanges;
+    });
+
+    // Đóng dialog
+    setShowDeleteDialog(false);
+    setItemToDelete(null);
+
+    showToast('✅ Đã xóa sản phẩm (chưa lưu)');
+  }, []);
 
   // Load session data và area info khi component mount
   useEffect(() => {
@@ -171,7 +390,7 @@ export default function OrderDetail({ navigation, route }) {
         setLoading(false);
       }
     };
-    
+
     loadData();
   }, [sessionId, tableId]);
 
@@ -185,7 +404,7 @@ export default function OrderDetail({ navigation, route }) {
   // Tính thời gian chơi real-time
   useEffect(() => {
     let interval = null;
-    
+
     if (sessionData && sessionData.startTime) {
       interval = setInterval(() => {
         const startTime = new Date(sessionData.startTime);
@@ -223,7 +442,7 @@ export default function OrderDetail({ navigation, route }) {
       });
 
       const productResults = await Promise.all(productPromises);
-      
+
       // Build products cache
       const productsCache = {};
       productResults.forEach(result => {
@@ -242,9 +461,9 @@ export default function OrderDetail({ navigation, route }) {
 
   // Tính tiền giờ chơi
   const getPlayingFee = () => {
-    const hours = Math.ceil(playingTime / 60);
     const hourlyRate = ratePerHour || sessionData?.pricingSnapshot?.ratePerHour || 40000;
-    return hours * hourlyRate;
+    // Tính theo phút, sau đó chuyển về giờ (tỷ lệ chính xác)
+    return Math.round((playingTime / 60) * hourlyRate);
   };
 
   // Tính tổng tiền F&B
@@ -252,10 +471,15 @@ export default function OrderDetail({ navigation, route }) {
     if (!sessionData?.items || sessionData.items.length === 0) {
       return 0;
     }
-    
+
     return sessionData.items.reduce((total, item) => {
+      // Bỏ qua nếu item đã bị xóa local
+      if (deletedItems.has(item._id)) {
+        return total;
+      }
+
       const price = Number(item.priceSnapshot || 0);
-      const qty = Number(item.qty || 0);
+      const qty = localQuantityChanges[item._id] ?? Number(item.qty || 0);
       return total + (price * qty);
     }, 0);
   };
@@ -268,55 +492,114 @@ export default function OrderDetail({ navigation, route }) {
   // Tính tổng số lượng items
   const getTotalQuantity = () => {
     let total = 1; // Luôn có 1 cho tiền chơi
-    
+
     if (sessionData?.items && sessionData.items.length > 0) {
       total += sessionData.items.reduce((sum, item) => {
-        return sum + Number(item.qty || 0);
+        // Bỏ qua nếu item đã bị xóa local
+        if (deletedItems.has(item._id)) {
+          return sum;
+        }
+
+        const qty = localQuantityChanges[item._id] ?? Number(item.qty || 0);
+        return sum + qty;
       }, 0);
     }
-    
+
     return total;
   };
 
-  // Render item trong order với hình ảnh
+  // Render item trong order với thiết kế riêng cho service items
   const renderOrderItem = (item, index) => {
     const shouldShowImage = item.type === 'food';
     let imageUrl = null;
-    
+
     if (shouldShowImage && item.product) {
       const product = productsData[item.productId]; // Lấy từ cache
       imageUrl = getProductImageUrl(product);
       console.log(`🖼️ Item ${item.name}: product found=${!!product}, imageUrl=${imageUrl}`);
     }
-    
+
+    // Service items (Bida) có layout riêng
+    if (item.type === 'service') {
+      return (
+        <View key={index} style={styles.serviceItem}>
+          <View style={styles.serviceLeftSection}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="game-controller" size={24} color="#4a5568" />
+            </View>
+            <View style={styles.serviceNameContainer}>
+              <Text style={styles.serviceName}>{item.name}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.serviceRightSection}>
+            <Text style={styles.servicePrice}>{item.price.toLocaleString()}đ</Text>
+          </View>
+        </View>
+      );
+    }
+
+    // F&B items với quantity controls hoạt động
     return (
       <View key={index} style={styles.orderItem}>
-        <View style={styles.itemInfo}>
-          {shouldShowImage ? (
-            <Image 
-              source={{ 
-                uri: imageUrl || 'https://i.imgur.com/placeholder.png' // Đổi placeholder
-              }}
-              style={styles.itemImage}
-              onLoad={() => console.log(`🖼️ Image loaded: ${item.name}`)}
-              onError={(error) => console.log(`🖼️ Image error: ${item.name}`, error.nativeEvent?.error)}
-            />
-          ) : (
-            <View style={styles.iconContainer}>
-              <Ionicons name="game-controller" size={20} color="#4a5568" />
-            </View>
-          )}
-          
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            {item.type === 'food' && item.unit && (
+        {/* LEFT SECTION: Image + Name */}
+        <View style={styles.leftSection}>
+          <Image
+            source={{
+              uri: imageUrl || 'https://i.imgur.com/placeholder.png'
+            }}
+            style={styles.itemImage}
+          />
+
+          <View style={styles.nameContainer}>
+            <Text style={styles.itemName} numberOfLines={2} ellipsizeMode="tail">
+              {item.name}
+            </Text>
+            {item.unit && (
               <Text style={styles.itemUnit}>Đơn vị: {item.unit}</Text>
             )}
           </View>
-          
-          <Text style={styles.itemQuantity}>{item.quantity}</Text>
         </View>
-        <Text style={styles.itemPrice}>{item.price.toLocaleString()}đ</Text>
+
+        {/* CENTER SECTION: Quantity Controls */}
+        <View style={styles.centerSection}>
+          <View style={styles.quantityControls}>
+            <TouchableOpacity 
+              style={[
+                styles.quantityButton,
+                updatingQuantity && styles.quantityButtonDisabled
+              ]}
+              onPress={() => handleDecreaseQuantity(item)}
+              disabled={updatingQuantity}
+            >
+              <Ionicons name="remove" size={20} color={updatingQuantity ? "#ccc" : "#666"} />
+            </TouchableOpacity>
+            
+            <View style={styles.quantityDisplay}>
+              {updatingQuantity ? (
+                <ActivityIndicator size="small" color="#2c3e50" />
+              ) : (
+                <Text style={styles.quantityText}>{item.quantity}</Text>
+              )}
+            </View>
+            
+            <TouchableOpacity 
+              style={[
+                styles.quantityButton,
+                updatingQuantity && styles.quantityButtonDisabled
+              ]}
+              onPress={() => handleIncreaseQuantity(item)}
+              disabled={updatingQuantity}
+            >
+              <Ionicons name="add" size={20} color={updatingQuantity ? "#ccc" : "#666"} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* RIGHT SECTION: Price */}
+        <View style={styles.rightSection}>
+          <Text style={styles.itemPrice}>{item.price.toLocaleString()}đ</Text>
+        </View>
       </View>
     );
   };
@@ -324,35 +607,48 @@ export default function OrderDetail({ navigation, route }) {
   // Tạo danh sách items để hiển thị
   const getOrderItems = () => {
     const items = [];
-    
+
     // 1. Tiền giờ chơi
     const playingFee = getPlayingFee();
-    const playingHours = Math.ceil(playingTime / 60);
-    
+    const displayHours = Math.floor(playingTime / 60);
+    const displayMinutes = playingTime % 60;
+    const timeDisplay = displayHours > 0
+      ? `${displayHours}h${displayMinutes > 0 ? ` ${displayMinutes}m` : ''}`
+      : `${displayMinutes}m`;
+
     items.push({
       id: 'playing_time',
-      name: `Bida (${playingHours}h${playingTime % 60 > 0 ? ` ${playingTime % 60}m` : ''})`,
+      name: `Bida (${timeDisplay})`,
       price: playingFee,
       quantity: 1,
       type: 'service'
     });
 
-    // 2. Các món F&B từ session
+    // 2. Các món F&B từ session với áp dụng thay đổi local
     if (sessionData?.items && sessionData.items.length > 0) {
       sessionData.items.forEach((sessionItem, index) => {
+        // Bỏ qua nếu item đã bị xóa local
+        if (deletedItems.has(sessionItem._id)) {
+          return;
+        }
+
         const product = productsData[sessionItem.product];
         
+        // Lấy số lượng từ local changes hoặc từ session data
+        const finalQuantity = localQuantityChanges[sessionItem._id] ?? Number(sessionItem.qty || 0);
+
         const orderItem = {
           id: `food_${index}`,
           name: sessionItem.nameSnapshot || 'Món ăn',
-          price: Number(sessionItem.priceSnapshot || 0) * Number(sessionItem.qty || 0),
-          quantity: Number(sessionItem.qty || 0),
+          price: Number(sessionItem.priceSnapshot || 0) * finalQuantity,
+          quantity: finalQuantity,
           type: 'food',
-          productId: sessionItem.product, // ID để lookup trong cache
-          product: product, // Product object từ cache
+          productId: sessionItem.product,
+          sessionItemId: sessionItem._id,
+          product: product,
           unit: product?.unit || null
         };
-        
+
         items.push(orderItem);
       });
     }
@@ -388,8 +684,8 @@ export default function OrderDetail({ navigation, route }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Không tìm thấy thông tin phiên chơi</Text>
-          <TouchableOpacity 
-            style={styles.backButtonError} 
+          <TouchableOpacity
+            style={styles.backButtonError}
             onPress={() => navigation.goBack()}
           >
             <Text style={styles.backButtonErrorText}>Quay lại</Text>
@@ -398,6 +694,185 @@ export default function OrderDetail({ navigation, route }) {
       </SafeAreaView>
     );
   }
+
+  // Hàm xử lý hủy đơn
+  const handleCancelOrder = async () => {
+    if (!cancelReason) {
+      showToast('Vui lòng chọn lý do hủy đơn', 'error');
+      return;
+    }
+
+    if (cancelReason === 'Lý do khác' && !otherReason.trim()) {
+      showToast('Vui lòng nhập lý do hủy đơn', 'error');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const reason = cancelReason === 'Lý do khác' ? otherReason.trim() : cancelReason;
+
+      console.log('🗑️ Canceling session:', sessionId, 'with reason:', reason);
+
+      // Gọi API hủy phiên session
+      await sessionService.void(sessionId, reason);
+
+      console.log('✅ Session voided successfully');
+
+      // Đóng dialog và reset state
+      setShowCancelDialog(false);
+      setCancelReason('');
+      setOtherReason('');
+
+      // Hiển thị thông báo thành công
+      showToast('✅ Đã hủy đơn thành công');
+
+      // Chuyển về màn hình danh sách bàn
+      navigation.navigate('Main', {
+        screen: 'Table',
+        params: { refreshData: true }
+      });
+
+    } catch (error) {
+      console.error('❌ Error canceling session:', error);
+
+      let errorMessage = 'Không thể hủy đơn';
+      if (error.response?.status === 400) {
+        errorMessage = 'Phiên chơi không hợp lệ để hủy';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Bạn không có quyền hủy đơn';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Không tìm thấy phiên chơi';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      showToast(`❌ ${errorMessage}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Component dialog hủy đơn
+  const CancelOrderDialog = () => (
+    <Modal
+      visible={showCancelDialog}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowCancelDialog(false)}
+    >
+      <View style={styles.dialogOverlay}>
+        <View style={styles.dialogContainer}>
+          <Text style={styles.dialogTitle}>Hủy đơn hàng</Text>
+
+          <View style={styles.reasonsList}>
+            {cancelReasons.map((reason, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.reasonItem}
+                onPress={() => setCancelReason(reason)}
+              >
+                <View style={[
+                  styles.radioButton,
+                  cancelReason === reason && styles.radioButtonSelected
+                ]}>
+                  {cancelReason === reason && (
+                    <View style={styles.radioButtonInner} />
+                  )}
+                </View>
+                <Text style={styles.reasonText}>{reason}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {cancelReason === 'Lý do khác' && (
+            <View style={styles.otherReasonContainer}>
+              <TextInput
+                style={styles.otherReasonInput}
+                placeholder="Nhập lý do hủy đơn..."
+                value={otherReason}
+                onChangeText={setOtherReason}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+          )}
+
+          <View style={styles.dialogButtons}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => {
+                setShowCancelDialog(false);
+                setCancelReason('');
+                setOtherReason('');
+              }}
+            >
+              <Text style={styles.cancelButtonText}>Hủy</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={handleCancelOrder}
+            >
+              <Text style={styles.confirmButtonText}>Xác nhận</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Dialog xác nhận xóa sản phẩm
+  const DeleteConfirmDialog = () => (
+    <Modal
+      visible={showDeleteDialog}
+      transparent
+      animationType="fade"
+      onRequestClose={() => {
+        setShowDeleteDialog(false);
+        setItemToDelete(null);
+      }}
+    >
+      <View style={styles.dialogOverlay}>
+        <View style={styles.dialogContainer}>
+          <View style={styles.deleteDialogIcon}>
+            <Ionicons name="trash" size={48} color="#ef4444" />
+          </View>
+          
+          <Text style={styles.dialogTitle}>Xóa sản phẩm</Text>
+          <Text style={styles.deleteDialogText}>
+            Bạn có muốn xóa sản phẩm{'\n'}
+            <Text style={styles.deleteDialogProductName}>"{itemToDelete?.name}"</Text>
+            {'\n'}khỏi đơn hàng không?
+          </Text>
+
+          <View style={styles.dialogButtons}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => {
+                setShowDeleteDialog(false);
+                setItemToDelete(null);
+              }}
+            >
+              <Text style={styles.cancelButtonText}>Hủy</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.confirmButton, styles.deleteConfirmButton]}
+              onPress={() => handleDeleteItem(itemToDelete)}
+              disabled={updatingQuantity}
+            >
+              {updatingQuantity ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Xóa</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const orderItems = getOrderItems();
 
@@ -481,8 +956,8 @@ export default function OrderDetail({ navigation, route }) {
 
       {/* Bottom Buttons */}
       <View style={styles.bottomButtons}>
-        <TouchableOpacity 
-          style={styles.addButton} 
+        <TouchableOpacity
+          style={styles.addButton}
           onPress={() => {
             navigation.navigate('OrderScreen', {
               tableId: tableId,
@@ -495,7 +970,7 @@ export default function OrderDetail({ navigation, route }) {
           <Text style={styles.addButtonText}>+ Thêm</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={saving}
@@ -509,11 +984,7 @@ export default function OrderDetail({ navigation, route }) {
 
         <TouchableOpacity
           style={styles.payButton}
-          onPress={() => navigation.navigate('ThanhToan', {
-            sessionId: sessionId,
-            tableName: tableName,
-            totalAmount: getTotalAmount()
-          })}
+          onPress={handlePayment}
         >
           <Text style={styles.payButtonText}>Thanh toán</Text>
         </TouchableOpacity>
@@ -529,27 +1000,34 @@ export default function OrderDetail({ navigation, route }) {
           <View style={styles.menuBox}>
             {[
               'Yêu cầu thanh toán',
-              'Lưu & in tạm tính', 
-              'Lưu & in phiếu bếp',
-              'In phiếu kiểm đồ',
               'Tạo đơn mới trên bàn này',
               'Gộp đơn',
               'Hủy đơn',
               'Thay đổi bàn',
-              'Khách hàng',
             ].map((item, index) => (
-              <TouchableOpacity key={index} style={styles.menuItem}>
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={() => handleMenuAction(item)}
+                disabled={saving}
+              >
                 <Text style={styles.menuText}>{item}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </TouchableOpacity>
       )}
+
+      {/* Dialog hủy đơn */}
+      <CancelOrderDialog />
+      
+      {/* Dialog xác nhận xóa sản phẩm */}
+      <DeleteConfirmDialog />
     </SafeAreaView>
   );
 }
 
-// Styles với thêm style cho disabled button
+// Styles với thêm styles cho dialog
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -623,60 +1101,145 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   orderItem: {
+    backgroundColor: '#fff',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomColor: '#eee',
-    borderBottomWidth: 1,
     alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    minHeight: 80,
   },
-  itemInfo: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    flex: 1 
+
+  // LEFT SECTION (40%)
+  leftSection: {
+    flex: 0.4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
   },
+
   itemImage: {
     width: 50,
     height: 50,
-    borderRadius: 8,
+    borderRadius: 10,
+    backgroundColor: '#f5f5f5',
     marginRight: 12,
-    backgroundColor: '#f0f0f0',
   },
+
   iconContainer: {
     width: 50,
     height: 50,
-    borderRadius: 8,
-    marginRight: 12,
-    backgroundColor: '#f0f5f0',
+    borderRadius: 10,
+    backgroundColor: '#e8f5e8',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
-  itemDetails: {
+
+  nameContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
-  itemName: { 
+
+  itemName: {
     fontSize: 16,
     fontWeight: '500',
+    color: '#333',
+    lineHeight: 20,
     marginBottom: 4,
   },
+
   itemUnit: {
     fontSize: 12,
-    color: '#666',
+    color: '#888',
+    fontStyle: 'italic',
   },
-  itemQuantity: {
-    backgroundColor: '#e3f3ff',
+
+  // CENTER SECTION (30%)
+  centerSection: {
+    flex: 0.3,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 10,
-    fontSize: 12,
-    fontWeight: '500',
   },
-  itemPrice: { 
-    fontSize: 16, 
-    fontWeight: 'bold',
-    marginLeft: 10,
-    color: '#2E7D32',
+
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#e8f4f8',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+
+  quantityButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafb',
+    borderRadius: 14,
+    margin: 2,
+  },
+
+  quantityButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  quantityDisplay: {
+    minWidth: 44,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+
+  quantityText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2c3e50',
+    textAlign: 'center',
+  },
+
+  serviceBadge: {
+    backgroundColor: '#e3f2fd',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#bbdefb',
+  },
+
+  serviceBadgeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1565c0',
+    textAlign: 'center',
+  },
+
+  // RIGHT SECTION (30%)
+  rightSection: {
+    flex: 0.3,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingLeft: 8,
+  },
+
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#27ae60',
+    textAlign: 'right',
+    lineHeight: 20,
   },
 
   totalSection: {
@@ -777,4 +1340,203 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   menuText: { fontSize: 16, color: '#222' },
+
+  // Dialog styles
+  dialogOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  dialogContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+  },
+  dialogTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+
+  reasonsList: {
+    marginBottom: 15,
+  },
+  reasonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  radioButtonSelected: {
+    borderColor: '#007AFF',
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#007AFF',
+  },
+  reasonText: {
+    fontSize: 16,
+    color: '#111827',
+    flex: 1,
+  },
+
+  otherReasonContainer: {
+    marginBottom: 20,
+  },
+  otherReasonInput: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#111827',
+    minHeight: 80,
+  },
+
+  dialogButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
+  // Styles cho nút tăng/giảm số lượng
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  increaseButton: {
+    borderLeftWidth: 1,
+    borderLeftColor: '#ddd',
+  },
+  decreaseButton: {
+    borderRightWidth: 1,
+    borderRightColor: '#ddd',
+  },
+  quantityText: {
+    fontSize: 14,
+    color: '#333',
+    paddingHorizontal: 8,
+  },
+
+  // Service badge cho các item dịch vụ (Bida)
+  serviceBadge: {
+    backgroundColor: '#e1f5fe',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    fontSize: 14,
+    color: '#01579b',
+    fontWeight: '500',
+  },
+
+  // Styles cho service item
+  serviceItem: {
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    minHeight: 80,
+  },
+  serviceLeftSection: {
+    flex: 0.7,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  serviceNameContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  serviceName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    lineHeight: 20,
+  },
+  serviceRightSection: {
+    flex: 0.3,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  servicePrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#27ae60',
+    textAlign: 'right',
+    lineHeight: 20,
+  },
+
+  // Styles cho delete dialog
+  deleteDialogIcon: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  deleteDialogText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+
+  deleteDialogProductName: {
+    fontWeight: '600',
+    color: '#111827',
+  },
+
+  deleteConfirmButton: {
+    backgroundColor: '#ef4444',
+  },
 });

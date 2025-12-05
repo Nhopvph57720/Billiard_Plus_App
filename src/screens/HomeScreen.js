@@ -23,27 +23,27 @@ import { listAreas } from "../services/areaService";
 const getId = (val) => {
   // Null/undefined check
   if (val === null || val === undefined) return undefined;
-  
+
   // Already a string
   if (typeof val === "string" && val.trim() !== "") return val.trim();
-  
+
   // Number (rare but possible)
   if (typeof val === "number") return String(val);
-  
+
   // Object with MongoDB $oid format
   if (typeof val === "object") {
     // Direct $oid property
     if (val.$oid && typeof val.$oid === "string") return val.$oid;
-    
+
     // Nested _id.$oid
     if (val._id && typeof val._id === "object" && val._id.$oid) {
       return val._id.$oid;
     }
-    
+
     // _id as string
     if (val._id && typeof val._id === "string") return val._id;
   }
-  
+
   // Last resort: convert to string if not empty
   const str = String(val);
   return str !== "undefined" && str !== "null" && str !== "" ? str : undefined;
@@ -91,14 +91,18 @@ export default function HomeScreen({ navigation }) {
             originalId: a._id,
           };
         })
-        .filter(a => a._id && !a._id.startsWith('area-fallback'));
+        .filter((a) => a._id && !a._id.startsWith("area-fallback"));
 
       console.log(`✅ Normalized ${normAreas.length} areas`);
       setAreas(normAreas);
 
       // ==================== LOAD TABLES ====================
       const tableRes = await tableService.list();
-      const rawTables = tableRes.data?.items || tableRes.data?.data || tableRes.data || tableRes;
+      const rawTables =
+        tableRes.data?.items ||
+        tableRes.data?.data ||
+        tableRes.data ||
+        tableRes;
 
       console.log("📊 Raw tables sample:", rawTables?.[0]);
 
@@ -106,7 +110,7 @@ export default function HomeScreen({ navigation }) {
         .map((t, index) => {
           const id = getId(t._id) || getId(t.id) || `table-fallback-${index}`;
           const areaId = getId(t.areaId) || getId(t.area) || getId(t.area_id);
-          
+
           return {
             ...t,
             _id: id,
@@ -115,22 +119,28 @@ export default function HomeScreen({ navigation }) {
             originalAreaId: t.areaId,
           };
         })
-        .filter(t => t._id && !t._id.startsWith('table-fallback'));
+        .filter((t) => t._id && !t._id.startsWith("table-fallback"));
 
       console.log(`✅ Normalized ${normTables.length} tables`);
       setTables(normTables);
 
       // ==================== LOAD SESSIONS ====================
       const sessionRes = await sessionService.list();
-      const rawSessions = sessionRes.data?.items || sessionRes.data?.data || sessionRes.data || sessionRes;
+      const rawSessions =
+        sessionRes.data?.items ||
+        sessionRes.data?.data ||
+        sessionRes.data ||
+        sessionRes;
 
       console.log("📊 Raw sessions sample:", rawSessions?.[0]);
 
-      const normSessions = (Array.isArray(rawSessions) ? rawSessions : [])
-        .map((s, index) => {
-          const id = getId(s._id) || getId(s.id) || `session-${Date.now()}-${index}`;
-          const tableId = getId(s.tableId) || getId(s.table_id) || getId(s.table);
-          
+      const normSessions = (Array.isArray(rawSessions) ? rawSessions : []).map(
+        (s, index) => {
+          const id =
+            getId(s._id) || getId(s.id) || `session-${Date.now()}-${index}`;
+          const tableId =
+            getId(s.tableId) || getId(s.table_id) || getId(s.table);
+
           return {
             ...s,
             _id: id,
@@ -138,10 +148,11 @@ export default function HomeScreen({ navigation }) {
             originalId: s._id,
             originalTableId: s.tableId,
           };
-        });
+        }
+      );
 
       // Filter only active sessions
-      const playingOnly = normSessions.filter(s => {
+      const playingOnly = normSessions.filter((s) => {
         const isActive = !s.endTime || s.status === "playing";
         const hasValidTableId = !!s.tableId;
         return isActive && hasValidTableId;
@@ -149,7 +160,6 @@ export default function HomeScreen({ navigation }) {
 
       console.log(`✅ Normalized ${playingOnly.length} active sessions`);
       setSessions(playingOnly);
-
     } catch (err) {
       console.error("❌ Load error:", err);
       console.error("Error details:", err.message);
@@ -166,19 +176,19 @@ export default function HomeScreen({ navigation }) {
 
   const getAreaName = (areaId) => {
     if (!areaId) return "Chưa có khu vực";
-    const area = areas.find(a => a._id === areaId);
+    const area = areas.find((a) => a._id === areaId);
     return area?.name || "Chưa rõ khu vực";
   };
 
   const getAreaColor = (areaId) => {
     if (!areaId) return "#999";
-    const area = areas.find(a => a._id === areaId);
+    const area = areas.find((a) => a._id === areaId);
     return area?.color || "#999";
   };
 
   const calculateSessionInfo = (tableId) => {
     if (!tableId) return null;
-    
+
     const session = sessions.find((s) => s.tableId === tableId);
     if (!session || !session.startTime) return null;
 
@@ -189,7 +199,9 @@ export default function HomeScreen({ navigation }) {
 
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    const formatted = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    const formatted = `${String(hours).padStart(2, "0")}:${String(
+      minutes
+    ).padStart(2, "0")}`;
 
     const table = tables.find((t) => t._id === tableId) || {};
     const rate = table.ratePerHour || 0;
@@ -199,19 +211,22 @@ export default function HomeScreen({ navigation }) {
   };
 
   const formatMoney = (v) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(v);
 
   // Lấy danh sách bàn đang chơi
   const getPlayingTables = () => {
-    return tables.filter(table => {
-      const hasSession = sessions.some(s => s.tableId === table._id);
+    return tables.filter((table) => {
+      const hasSession = sessions.some((s) => s.tableId === table._id);
       return hasSession && table.status === "playing";
     });
   };
 
   const renderPlayingTable = (table, index) => {
     if (!table || !table._id) return null;
-    
+
     const info = calculateSessionInfo(table._id);
     if (!info) return null;
 
@@ -224,9 +239,9 @@ export default function HomeScreen({ navigation }) {
         key={key}
         style={[styles.tableCard, { borderLeftColor: areaColor }]}
         onPress={() => {
-          navigation.navigate("OrderDetail", { 
-            session: info.session, 
-            table 
+          navigation.navigate("OrderDetail", {
+            session: info.session,
+            table,
           });
         }}
       >
@@ -241,7 +256,9 @@ export default function HomeScreen({ navigation }) {
 
           <View style={[styles.statusBadge, { backgroundColor: "#e8f8f3" }]}>
             <View style={[styles.statusDot, { backgroundColor: "#00d68f" }]} />
-            <Text style={[styles.statusText, { color: "#00d68f" }]}>Đang chơi</Text>
+            <Text style={[styles.statusText, { color: "#00d68f" }]}>
+              Đang chơi
+            </Text>
           </View>
         </View>
 
@@ -271,7 +288,9 @@ export default function HomeScreen({ navigation }) {
     return (
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color="#00d68f" />
-        <Text style={{ marginTop: 10, color: "#666" }}>Đang tải dữ liệu...</Text>
+        <Text style={{ marginTop: 10, color: "#666" }}>
+          Đang tải dữ liệu...
+        </Text>
       </View>
     );
   }
@@ -281,46 +300,56 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Header onMenuPress={() => setMenuVisible(true)} />
-      <Menu visible={menuVisible} onClose={() => setMenuVisible(false)} navigation={navigation} />
+      <Menu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        navigation={navigation}
+      />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {playingTables.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="beer-outline" size={64} color="#ddd" />
             <Text style={styles.emptyText}>Chưa có bàn nào đang chơi</Text>
-            <Text style={styles.emptySubText}>Nhấn nút "Tạo đơn" để bắt đầu</Text>
+            <Text style={styles.emptySubText}>
+              Nhấn nút "Tạo đơn" để bắt đầu
+            </Text>
           </View>
         ) : (
           <View style={styles.listContainer}>
-            {playingTables.map((table, index) => renderPlayingTable(table, index))}
+            {playingTables.map((table, index) =>
+              renderPlayingTable(table, index)
+            )}
           </View>
         )}
       </ScrollView>
 
-      <TouchableOpacity 
-        style={styles.addButton} 
+      <TouchableOpacity
+        style={styles.addButton}
         onPress={() => navigation.navigate("OrderScreen")}
       >
         <Ionicons name="add" size={28} color="#fff" />
-        <Text style={styles.addButtonText}>Tạo đơn</Text>
+        {/* <Text style={styles.addButtonText}>Tạo đơn</Text> */}
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#f5f5f5" 
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
   },
-  
-  center: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center" 
+
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   scrollView: {
@@ -333,16 +362,16 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
-  emptyContainer: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
     paddingHorizontal: 20,
   },
-  
-  emptyText: { 
-    fontSize: 18, 
+
+  emptyText: {
+    fontSize: 18,
     color: "#999",
     fontWeight: "600",
     marginTop: 16,
@@ -367,9 +396,9 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
 
-  tableHeader: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
+  tableHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 12,
   },
@@ -387,29 +416,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  tableName: { 
-    fontSize: 20, 
-    fontWeight: "700", 
-    color: "#333" 
+  tableName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
   },
 
-  statusBadge: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    paddingHorizontal: 10, 
-    paddingVertical: 6, 
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 16,
   },
-  
-  statusDot: { 
-    width: 8, 
-    height: 8, 
-    borderRadius: 4, 
-    marginRight: 6 
+
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
-  
-  statusText: { 
-    fontSize: 13, 
+
+  statusText: {
+    fontSize: 13,
     fontWeight: "600",
   },
 
@@ -419,15 +448,15 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f0f0",
   },
 
-  infoRow: { 
-    flexDirection: "row", 
-    alignItems: "center", 
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
   },
-  
-  infoText: { 
-    marginLeft: 8, 
-    color: "#333", 
+
+  infoText: {
+    marginLeft: 8,
+    color: "#333",
     fontSize: 16,
     fontWeight: "500",
   },
@@ -447,27 +476,26 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
 
-  addButton: { 
-    position: "absolute", 
-    bottom: 30, 
-    right: 20, 
-    backgroundColor: "#00d68f", 
+  addButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    backgroundColor: "#00d68f",
+    width: 60,
+    height: 60,
     borderRadius: 30, 
-    flexDirection: "row", 
-    alignItems: "center", 
-    paddingHorizontal: 20, 
-    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 6,
     shadowColor: "#00d68f",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
-  
-  addButtonText: { 
-    color: "#fff", 
-    fontSize: 16, 
-    fontWeight: "700", 
-    marginLeft: 6 
+  addButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 6,
   },
 });
