@@ -1008,14 +1008,10 @@ export default function OrderDetail({ navigation, route }) {
           <View style={styles.menuBox}>
             {[
               'Yêu cầu thanh toán',
-              'Lưu & in tạm tính',
-              'Lưu & in phiếu bếp',
-              'In phiếu kiểm đồ',
               'Tạo đơn mới trên bàn này',
               'Gộp đơn',
               'Hủy đơn',
               'Thay đổi bàn',
-              'Khách hàng',
             ].map((item, index) => (
               <TouchableOpacity
                 key={index}
