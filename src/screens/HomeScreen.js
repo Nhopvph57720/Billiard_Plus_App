@@ -335,10 +335,10 @@ const renderPlayingTable = (table, index) => {
 
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => navigation.navigate("OrderScreen")}
+        onPress={() => navigation.navigate("ChooseTableScreen")}
       >
         <Ionicons name="add" size={28} color="#fff" />
-        {/* <Text style={styles.addButtonText}>Tạo đơn</Text> */}
+        {/* <Text style={styles.addButtonText">Tạo đơn</Text> */}
       </TouchableOpacity>
     </View>
   );
